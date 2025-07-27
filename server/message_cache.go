@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"time"
@@ -63,6 +64,10 @@ const (
 		);
 		INSERT INTO stats (key, value) VALUES ('messages', 0);
 		COMMIT;
+	`
+	builtinMessageCacheStartupQueries = `
+		PRAGMA foreign_keys = ON;
+		PRAGMA busy_timeout = 50000; -- Wait up to 5 seconds for a lock to be released		       
 	`
 	insertMessageQuery = `
 		INSERT INTO messages (mid, time, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, attachment_deleted, sender, user, content_type, encoding, published)
@@ -287,13 +292,18 @@ type messageCache struct {
 
 // newSqliteCache creates a SQLite file-backed cache
 func newSqliteCache(filename, startupQueries string, cacheDuration time.Duration, batchSize int, batchTimeout time.Duration, nop bool) (*messageCache, error) {
+	// Parse the filename
+	file, datasource, err := parseSqliteFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse cache database filename %s: %w", filename, err)
+	}
 	// Check the parent directory of the database file (makes for friendly error messages)
 	parentDir := filepath.Dir(filename)
 	if !util.FileExists(parentDir) {
 		return nil, fmt.Errorf("cache database directory %s does not exist or is not accessible", parentDir)
 	}
 	// Open database
-	db, err := sql.Open("sqlite3", filename)
+	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_busy_timeout=50000", filename))
 	if err != nil {
 		return nil, err
 	}
@@ -789,8 +799,21 @@ func (c *messageCache) Close() error {
 	return c.db.Close()
 }
 
+func parseSqliteFile(filename string) (file string, datasource string, err error) {
+	f, err := url.Parse(filename)
+	if err != nil {
+		return "", "", fmt.Errorf("cannot parse cache database filename %s: %w", filename, err)
+	} else if f.Scheme != "file" {
+		return f.Path, filename, nil
+	}
+	return filename, filename, nil
+}
+
 func setupMessagesDB(db *sql.DB, startupQueries string, cacheDuration time.Duration) error {
 	// Run startup queries
+	if _, err := db.Exec(builtinMessageCacheStartupQueries); err != nil {
+		return err
+	}
 	if startupQueries != "" {
 		if _, err := db.Exec(startupQueries); err != nil {
 			return err

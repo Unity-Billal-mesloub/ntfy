@@ -3,8 +3,11 @@ package server
 import (
 	"database/sql"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"net/netip"
+	"net/url"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -88,6 +91,26 @@ func testCacheMessages(t *testing.T, c *messageCache) {
 	// non-existing: since all
 	messages, _ = c.Messages("doesnotexist", sinceAllMessages, false)
 	require.Empty(t, messages)
+}
+
+func TestSqliteCache_MessagesLock(t *testing.T) {
+	testCacheMessagesLock(t, newSqliteTestCache(t))
+}
+
+func TestMemCache_MessagesLock(t *testing.T) {
+	testCacheMessagesLock(t, newMemTestCache(t))
+}
+
+func testCacheMessagesLock(t *testing.T, c *messageCache) {
+	var wg sync.WaitGroup
+	for i := 0; i < 3000; i++ {
+		wg.Add(1)
+		go func() {
+			assert.Nil(t, c.AddMessage(newDefaultMessage("mytopic", "test message")))
+			wg.Done()
+		}()
+	}
+	wg.Wait()
 }
 
 func TestSqliteCache_MessagesScheduled(t *testing.T) {
@@ -685,6 +708,35 @@ func checkSchemaVersion(t *testing.T, db *sql.DB) {
 	require.Nil(t, rows.Close())
 }
 
+func TestURL(t *testing.T) {
+	u, _ := url.Parse("file:mem?_busy_timeout=1000&_journal_mode=WAL&_synchronous=normal&_temp_store=memory")
+	fmt.Printf("opaque: %+v\n", u.Opaque)
+	fmt.Printf("scheme: %+v\n", u.Scheme)
+	fmt.Printf("host: %+v\n", u.Host)
+	fmt.Printf("path: %+v\n", u.Path)
+	fmt.Printf("raw path: %+v\n", u.RawPath)
+	fmt.Printf("raw query: %+v\n", u.RawQuery)
+	fmt.Printf("query: %+v\n", u.Query())
+	fmt.Println("----------")
+	u, _ = url.Parse("myfile.db")
+	fmt.Printf("opaque: %+v\n", u.Opaque)
+	fmt.Printf("scheme: %+v\n", u.Scheme)
+	fmt.Printf("host: %+v\n", u.Host)
+	fmt.Printf("path: %+v\n", u.Path)
+	fmt.Printf("raw path: %+v\n", u.RawPath)
+	fmt.Printf("raw query: %+v\n", u.RawQuery)
+	fmt.Printf("query: %+v\n", u.Query())
+	fmt.Println("----------")
+	u, _ = url.Parse("htttps://abc.com/myfile.db")
+	fmt.Printf("opaque: %+v\n", u.Opaque)
+	fmt.Printf("scheme: %+v\n", u.Scheme)
+	fmt.Printf("host: %+v\n", u.Host)
+	fmt.Printf("path: %+v\n", u.Path)
+	fmt.Printf("raw path: %+v\n", u.RawPath)
+	fmt.Printf("raw query: %+v\n", u.RawQuery)
+	fmt.Printf("query: %+v\n", u.Query())
+
+}
 func TestMemCache_NopCache(t *testing.T) {
 	c, _ := newNopCache()
 	require.Nil(t, c.AddMessage(newDefaultMessage("mytopic", "my message")))

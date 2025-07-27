@@ -50,7 +50,7 @@ const (
 		);			
 		COMMIT;
 	`
-	builtinStartupQueries = `
+	builtinWebPushStartupQueries = `
 		PRAGMA foreign_keys = ON;
 	`
 
@@ -134,7 +134,7 @@ func runWebPushStartupQueries(db *sql.DB, startupQueries string) error {
 	if _, err := db.Exec(startupQueries); err != nil {
 		return err
 	}
-	if _, err := db.Exec(builtinStartupQueries); err != nil {
+	if _, err := db.Exec(builtinWebPushStartupQueries); err != nil {
 		return err
 	}
 	return nil
