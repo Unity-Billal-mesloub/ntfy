@@ -35,6 +35,7 @@ import { useTranslation } from "react-i18next";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
+import LockIcon from "@mui/icons-material/Lock";
 import routes from "./routes";
 import { AccountContext } from "./App";
 import DialogFooter from "./DialogFooter";
@@ -206,7 +207,14 @@ const UsersTable = (props) => {
           {users.map((user) => (
             <TableRow key={user.username} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
               <TableCell component="th" scope="row" sx={{ paddingLeft: 0 }}>
-                {user.username}
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                  <span>{user.username}</span>
+                  {user.provisioned && (
+                    <Tooltip title={t("admin_users_provisioned_tooltip")}>
+                      <LockIcon fontSize="small" color="disabled" />
+                    </Tooltip>
+                  )}
+                </Stack>
               </TableCell>
               <TableCell>
                 <RoleChip role={user.role} />
@@ -215,23 +223,31 @@ const UsersTable = (props) => {
               <TableCell>
                 {user.grants && user.grants.length > 0 ? (
                   <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                    {user.grants.map((grant, idx) => (
-                      <Tooltip key={idx} title={t("admin_users_table_grant_tooltip", { permission: grant.permission })}>
-                        <Chip
-                          label={grant.topic}
-                          size="small"
-                          variant="outlined"
-                          onDelete={user.role !== "admin" ? () => handleDeleteAccessClick(user, grant) : undefined}
-                        />
-                      </Tooltip>
-                    ))}
+                    {user.grants.map((grant, idx) => {
+                      const canDelete = user.role !== "admin" && !grant.provisioned;
+                      const tooltipText = grant.provisioned
+                        ? t("admin_users_table_grant_provisioned_tooltip", { permission: grant.permission })
+                        : t("admin_users_table_grant_tooltip", { permission: grant.permission });
+                      return (
+                        <Tooltip key={idx} title={tooltipText}>
+                          <Chip
+                            label={grant.topic}
+                            size="small"
+                            variant={grant.provisioned ? "filled" : "outlined"}
+                            color={grant.provisioned ? "default" : "default"}
+                            icon={grant.provisioned ? <LockIcon fontSize="small" /> : undefined}
+                            onDelete={canDelete ? () => handleDeleteAccessClick(user, grant) : undefined}
+                          />
+                        </Tooltip>
+                      );
+                    })}
                   </Stack>
                 ) : (
                   "-"
                 )}
               </TableCell>
               <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-                {user.role !== "admin" ? (
+                {user.role !== "admin" && !user.provisioned ? (
                   <>
                     <Tooltip title={t("admin_users_table_add_access_tooltip")}>
                       <IconButton onClick={() => handleAddAccessClick(user)} size="small">
@@ -247,6 +263,24 @@ const UsersTable = (props) => {
                       <IconButton onClick={() => handleDeleteClick(user)} size="small">
                         <DeleteOutlineIcon />
                       </IconButton>
+                    </Tooltip>
+                  </>
+                ) : user.role !== "admin" && user.provisioned ? (
+                  <>
+                    <Tooltip title={t("admin_users_table_add_access_tooltip")}>
+                      <IconButton onClick={() => handleAddAccessClick(user)} size="small">
+                        <AddIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title={t("admin_users_provisioned_cannot_edit")}>
+                      <span>
+                        <IconButton disabled size="small">
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton disabled size="small">
+                          <DeleteOutlineIcon />
+                        </IconButton>
+                      </span>
                     </Tooltip>
                   </>
                 ) : (
