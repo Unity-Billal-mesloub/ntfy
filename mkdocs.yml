@@ -74,6 +74,7 @@ plugins:
   - search
   - minify:
       minify_html: true
+  - swagger-ui-tag
 
 nav:
   - "Getting started": index.md
@@ -89,6 +90,7 @@ nav:
       - "Installation": install.md
       - "Configuration": config.md
   - "Other things":
+      - "API Reference": api.md
       - "FAQs": faq.md
       - "Examples": examples.md
       - "Integrations + projects": integrations.md
