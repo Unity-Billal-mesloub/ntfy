@@ -8,8 +8,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"golang.org/x/crypto/bcrypt"
-	"heckel.io/ntfy/v2/user"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -24,7 +22,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/bcrypt"
 	"heckel.io/ntfy/v2/log"
+	"heckel.io/ntfy/v2/user"
 	"heckel.io/ntfy/v2/util"
 )
 
@@ -676,6 +676,86 @@ func TestServer_PublishInvalidTopic(t *testing.T) {
 	s.smtpSender = &testMailer{}
 	response := request(t, s, "PUT", "/docs", "fail", nil)
 	require.Equal(t, 40010, toHTTPError(t, response.Body.String()).Code)
+}
+
+func TestServer_PublishWithSIDInPath(t *testing.T) {
+	s := newTestServer(t, newTestConfig(t))
+
+	response := request(t, s, "POST", "/mytopic/sid", "message", nil)
+	msg := toMessage(t, response.Body.String())
+	require.NotEmpty(t, msg.ID)
+	require.Equal(t, "sid", msg.SequenceID)
+}
+
+func TestServer_PublishWithSIDInHeader(t *testing.T) {
+	s := newTestServer(t, newTestConfig(t))
+
+	response := request(t, s, "POST", "/mytopic", "message", map[string]string{
+		"sid": "sid",
+	})
+	msg := toMessage(t, response.Body.String())
+	require.NotEmpty(t, msg.ID)
+	require.Equal(t, "sid", msg.SequenceID)
+}
+
+func TestServer_PublishWithSIDInPathAndHeader(t *testing.T) {
+	s := newTestServer(t, newTestConfig(t))
+
+	response := request(t, s, "PUT", "/mytopic/sid1", "message", map[string]string{
+		"sid": "sid2",
+	})
+	msg := toMessage(t, response.Body.String())
+	require.NotEmpty(t, msg.ID)
+	require.Equal(t, "sid1", msg.SequenceID) // Sequence ID in path has priority over header
+}
+
+func TestServer_PublishWithSIDInQuery(t *testing.T) {
+	s := newTestServer(t, newTestConfig(t))
+
+	response := request(t, s, "PUT", "/mytopic?sid=sid1", "message", nil)
+	msg := toMessage(t, response.Body.String())
+	require.NotEmpty(t, msg.ID)
+	require.Equal(t, "sid1", msg.SequenceID)
+}
+
+func TestServer_PublishWithSIDViaGet(t *testing.T) {
+	s := newTestServer(t, newTestConfig(t))
+
+	response := request(t, s, "GET", "/mytopic/publish?sid=sid1", "message", nil)
+	msg := toMessage(t, response.Body.String())
+	require.NotEmpty(t, msg.ID)
+	require.Equal(t, "sid1", msg.SequenceID)
+}
+
+func TestServer_PublishAsJSON_WithSequenceID(t *testing.T) {
+	s := newTestServer(t, newTestConfig(t))
+
+	body := `{"topic":"mytopic","message":"A message","sequence_id":"my-sequence-123"}`
+	response := request(t, s, "PUT", "/", body, nil)
+	require.Equal(t, 200, response.Code)
+
+	msg := toMessage(t, response.Body.String())
+	require.NotEmpty(t, msg.ID)
+	require.Equal(t, "my-sequence-123", msg.SequenceID)
+}
+
+func TestServer_PublishWithInvalidSIDInPath(t *testing.T) {
+	s := newTestServer(t, newTestConfig(t))
+
+	response := request(t, s, "POST", "/mytopic/.", "message", nil)
+
+	require.Equal(t, 404, response.Code)
+}
+
+func TestServer_PublishWithInvalidSIDInHeader(t *testing.T) {
+	s := newTestServer(t, newTestConfig(t))
+
+	response := request(t, s, "POST", "/mytopic", "message", map[string]string{
+		"X-Sequence-ID": "*&?",
+	})
+
+	require.Equal(t, 400, response.Code)
+	require.Equal(t, 40049, toHTTPError(t, response.Body.String()).Code)
 }
 
 func TestServer_PollWithQueryFilters(t *testing.T) {
@@ -3207,6 +3287,368 @@ func TestServer_MessageTemplate_Until100_000(t *testing.T) {
 	require.Equal(t, 400, response.Code)
 	require.Equal(t, 40045, toHTTPError(t, response.Body.String()).Code)
 	require.Contains(t, toHTTPError(t, response.Body.String()).Message, "too many iterations")
+}
+
+func TestServer_DeleteMessage(t *testing.T) {
+	t.Parallel()
+	s := newTestServer(t, newTestConfig(t))
+
+	// Publish a message with a sequence ID
+	response := request(t, s, "PUT", "/mytopic/seq123", "original message", nil)
+	require.Equal(t, 200, response.Code)
+	msg := toMessage(t, response.Body.String())
+	require.Equal(t, "seq123", msg.SequenceID)
+	require.Equal(t, "message", msg.Event)
+
+	// Delete the message using DELETE method
+	response = request(t, s, "DELETE", "/mytopic/seq123", "", nil)
+	require.Equal(t, 200, response.Code)
+	deleteMsg := toMessage(t, response.Body.String())
+	require.Equal(t, "seq123", deleteMsg.SequenceID)
+	require.Equal(t, "message_delete", deleteMsg.Event)
+
+	// Poll and verify both messages are returned
+	response = request(t, s, "GET", "/mytopic/json?poll=1", "", nil)
+	require.Equal(t, 200, response.Code)
+	lines := strings.Split(strings.TrimSpace(response.Body.String()), "\n")
+	require.Equal(t, 2, len(lines))
+
+	msg1 := toMessage(t, lines[0])
+	msg2 := toMessage(t, lines[1])
+	require.Equal(t, "message", msg1.Event)
+	require.Equal(t, "message_delete", msg2.Event)
+	require.Equal(t, "seq123", msg1.SequenceID)
+	require.Equal(t, "seq123", msg2.SequenceID)
+}
+
+func TestServer_ClearMessage(t *testing.T) {
+	t.Parallel()
+	s := newTestServer(t, newTestConfig(t))
+
+	// Publish a message with a sequence ID
+	response := request(t, s, "PUT", "/mytopic/seq456", "original message", nil)
+	require.Equal(t, 200, response.Code)
+	msg := toMessage(t, response.Body.String())
+	require.Equal(t, "seq456", msg.SequenceID)
+	require.Equal(t, "message", msg.Event)
+
+	// Clear the message using PUT /topic/seq/clear
+	response = request(t, s, "PUT", "/mytopic/seq456/clear", "", nil)
+	require.Equal(t, 200, response.Code)
+	clearMsg := toMessage(t, response.Body.String())
+	require.Equal(t, "seq456", clearMsg.SequenceID)
+	require.Equal(t, "message_clear", clearMsg.Event)
+
+	// Poll and verify both messages are returned
+	response = request(t, s, "GET", "/mytopic/json?poll=1", "", nil)
+	require.Equal(t, 200, response.Code)
+	lines := strings.Split(strings.TrimSpace(response.Body.String()), "\n")
+	require.Equal(t, 2, len(lines))
+
+	msg1 := toMessage(t, lines[0])
+	msg2 := toMessage(t, lines[1])
+	require.Equal(t, "message", msg1.Event)
+	require.Equal(t, "message_clear", msg2.Event)
+	require.Equal(t, "seq456", msg1.SequenceID)
+	require.Equal(t, "seq456", msg2.SequenceID)
+}
+
+func TestServer_ClearMessage_ReadEndpoint(t *testing.T) {
+	// Test that /topic/seq/read also works
+	t.Parallel()
+	s := newTestServer(t, newTestConfig(t))
+
+	// Publish a message
+	response := request(t, s, "PUT", "/mytopic/seq789", "original message", nil)
+	require.Equal(t, 200, response.Code)
+
+	// Clear using /read endpoint
+	response = request(t, s, "PUT", "/mytopic/seq789/read", "", nil)
+	require.Equal(t, 200, response.Code)
+	clearMsg := toMessage(t, response.Body.String())
+	require.Equal(t, "seq789", clearMsg.SequenceID)
+	require.Equal(t, "message_clear", clearMsg.Event)
+}
+
+func TestServer_UpdateMessage(t *testing.T) {
+	t.Parallel()
+	s := newTestServer(t, newTestConfig(t))
+
+	// Publish original message
+	response := request(t, s, "PUT", "/mytopic/update-seq", "original message", nil)
+	require.Equal(t, 200, response.Code)
+	msg1 := toMessage(t, response.Body.String())
+	require.Equal(t, "update-seq", msg1.SequenceID)
+	require.Equal(t, "original message", msg1.Message)
+
+	// Update the message (same sequence ID, new content)
+	response = request(t, s, "PUT", "/mytopic/update-seq", "updated message", nil)
+	require.Equal(t, 200, response.Code)
+	msg2 := toMessage(t, response.Body.String())
+	require.Equal(t, "update-seq", msg2.SequenceID)
+	require.Equal(t, "updated message", msg2.Message)
+	require.NotEqual(t, msg1.ID, msg2.ID) // Different message IDs
+
+	// Poll and verify both versions are returned
+	response = request(t, s, "GET", "/mytopic/json?poll=1", "", nil)
+	require.Equal(t, 200, response.Code)
+	lines := strings.Split(strings.TrimSpace(response.Body.String()), "\n")
+	require.Equal(t, 2, len(lines))
+
+	polledMsg1 := toMessage(t, lines[0])
+	polledMsg2 := toMessage(t, lines[1])
+	require.Equal(t, "original message", polledMsg1.Message)
+	require.Equal(t, "updated message", polledMsg2.Message)
+	require.Equal(t, "update-seq", polledMsg1.SequenceID)
+	require.Equal(t, "update-seq", polledMsg2.SequenceID)
+}
+
+func TestServer_UpdateMessage_UsingMessageID(t *testing.T) {
+	t.Parallel()
+	s := newTestServer(t, newTestConfig(t))
+
+	// Publish original message without a sequence ID
+	response := request(t, s, "PUT", "/mytopic", "original message", nil)
+	require.Equal(t, 200, response.Code)
+	msg1 := toMessage(t, response.Body.String())
+	require.NotEmpty(t, msg1.ID)
+	require.Empty(t, msg1.SequenceID) // No sequence ID provided
+	require.Equal(t, "original message", msg1.Message)
+
+	// Update the message using the message ID as the sequence ID
+	response = request(t, s, "PUT", "/mytopic/"+msg1.ID, "updated message", nil)
+	require.Equal(t, 200, response.Code)
+	msg2 := toMessage(t, response.Body.String())
+	require.Equal(t, msg1.ID, msg2.SequenceID) // Message ID is now used as sequence ID
+	require.Equal(t, "updated message", msg2.Message)
+	require.NotEqual(t, msg1.ID, msg2.ID) // Different message IDs
+
+	// Poll and verify both versions are returned
+	response = request(t, s, "GET", "/mytopic/json?poll=1", "", nil)
+	require.Equal(t, 200, response.Code)
+	lines := strings.Split(strings.TrimSpace(response.Body.String()), "\n")
+	require.Equal(t, 2, len(lines))
+
+	polledMsg1 := toMessage(t, lines[0])
+	polledMsg2 := toMessage(t, lines[1])
+	require.Equal(t, "original message", polledMsg1.Message)
+	require.Equal(t, "updated message", polledMsg2.Message)
+	require.Empty(t, polledMsg1.SequenceID)          // Original has no sequence ID
+	require.Equal(t, msg1.ID, polledMsg2.SequenceID) // Update uses original message ID as sequence ID
+}
+
+func TestServer_DeleteAndClear_InvalidSequenceID(t *testing.T) {
+	t.Parallel()
+	s := newTestServer(t, newTestConfig(t))
+
+	// Test invalid sequence ID for delete (returns 404 because route doesn't match)
+	response := request(t, s, "DELETE", "/mytopic/invalid*seq", "", nil)
+	require.Equal(t, 404, response.Code)
+
+	// Test invalid sequence ID for clear (returns 404 because route doesn't match)
+	response = request(t, s, "PUT", "/mytopic/invalid*seq/clear", "", nil)
+	require.Equal(t, 404, response.Code)
+}
+
+func TestServer_DeleteMessage_WithFirebase(t *testing.T) {
+	sender := newTestFirebaseSender(10)
+	s := newTestServer(t, newTestConfig(t))
+	s.firebaseClient = newFirebaseClient(sender, &testAuther{Allow: true})
+
+	// Publish a message
+	response := request(t, s, "PUT", "/mytopic/firebase-seq", "test message", nil)
+	require.Equal(t, 200, response.Code)
+
+	time.Sleep(100 * time.Millisecond) // Firebase publishing happens
+	require.Equal(t, 1, len(sender.Messages()))
+	require.Equal(t, "message", sender.Messages()[0].Data["event"])
+
+	// Delete the message
+	response = request(t, s, "DELETE", "/mytopic/firebase-seq", "", nil)
+	require.Equal(t, 200, response.Code)
+
+	time.Sleep(100 * time.Millisecond) // Firebase publishing happens
+	require.Equal(t, 2, len(sender.Messages()))
+	require.Equal(t, "message_delete", sender.Messages()[1].Data["event"])
+	require.Equal(t, "firebase-seq", sender.Messages()[1].Data["sequence_id"])
+}
+
+func TestServer_ClearMessage_WithFirebase(t *testing.T) {
+	sender := newTestFirebaseSender(10)
+	s := newTestServer(t, newTestConfig(t))
+	s.firebaseClient = newFirebaseClient(sender, &testAuther{Allow: true})
+
+	// Publish a message
+	response := request(t, s, "PUT", "/mytopic/firebase-clear-seq", "test message", nil)
+	require.Equal(t, 200, response.Code)
+
+	time.Sleep(100 * time.Millisecond)
+	require.Equal(t, 1, len(sender.Messages()))
+
+	// Clear the message
+	response = request(t, s, "PUT", "/mytopic/firebase-clear-seq/clear", "", nil)
+	require.Equal(t, 200, response.Code)
+
+	time.Sleep(100 * time.Millisecond)
+	require.Equal(t, 2, len(sender.Messages()))
+	require.Equal(t, "message_clear", sender.Messages()[1].Data["event"])
+	require.Equal(t, "firebase-clear-seq", sender.Messages()[1].Data["sequence_id"])
+}
+
+func TestServer_UpdateScheduledMessage(t *testing.T) {
+	t.Parallel()
+	s := newTestServer(t, newTestConfig(t))
+
+	// Publish a scheduled message (future delivery)
+	response := request(t, s, "PUT", "/mytopic/sched-seq?delay=1h", "original scheduled message", nil)
+	require.Equal(t, 200, response.Code)
+	msg1 := toMessage(t, response.Body.String())
+	require.Equal(t, "sched-seq", msg1.SequenceID)
+	require.Equal(t, "original scheduled message", msg1.Message)
+
+	// Verify scheduled message exists
+	response = request(t, s, "GET", "/mytopic/json?poll=1&scheduled=1", "", nil)
+	require.Equal(t, 200, response.Code)
+	messages := toMessages(t, response.Body.String())
+	require.Equal(t, 1, len(messages))
+	require.Equal(t, "original scheduled message", messages[0].Message)
+
+	// Update the scheduled message (same sequence ID, new content)
+	response = request(t, s, "PUT", "/mytopic/sched-seq?delay=2h", "updated scheduled message", nil)
+	require.Equal(t, 200, response.Code)
+	msg2 := toMessage(t, response.Body.String())
+	require.Equal(t, "sched-seq", msg2.SequenceID)
+	require.Equal(t, "updated scheduled message", msg2.Message)
+	require.NotEqual(t, msg1.ID, msg2.ID)
+
+	// Verify only the updated message exists (old scheduled was deleted)
+	response = request(t, s, "GET", "/mytopic/json?poll=1&scheduled=1", "", nil)
+	require.Equal(t, 200, response.Code)
+	messages = toMessages(t, response.Body.String())
+	require.Equal(t, 1, len(messages))
+	require.Equal(t, "updated scheduled message", messages[0].Message)
+	require.Equal(t, msg2.ID, messages[0].ID)
+}
+
+func TestServer_DeleteScheduledMessage(t *testing.T) {
+	t.Parallel()
+	s := newTestServer(t, newTestConfig(t))
+
+	// Publish a scheduled message (future delivery)
+	response := request(t, s, "PUT", "/mytopic/delete-sched-seq?delay=1h", "scheduled message to delete", nil)
+	require.Equal(t, 200, response.Code)
+	msg := toMessage(t, response.Body.String())
+	require.Equal(t, "delete-sched-seq", msg.SequenceID)
+
+	// Verify scheduled message exists
+	response = request(t, s, "GET", "/mytopic/json?poll=1&scheduled=1", "", nil)
+	require.Equal(t, 200, response.Code)
+	messages := toMessages(t, response.Body.String())
+	require.Equal(t, 1, len(messages))
+	require.Equal(t, "scheduled message to delete", messages[0].Message)
+
+	// Delete the scheduled message
+	response = request(t, s, "DELETE", "/mytopic/delete-sched-seq", "", nil)
+	require.Equal(t, 200, response.Code)
+	deleteMsg := toMessage(t, response.Body.String())
+	require.Equal(t, "delete-sched-seq", deleteMsg.SequenceID)
+	require.Equal(t, "message_delete", deleteMsg.Event)
+
+	// Verify scheduled message was deleted, only delete event remains
+	response = request(t, s, "GET", "/mytopic/json?poll=1&scheduled=1", "", nil)
+	require.Equal(t, 200, response.Code)
+	messages = toMessages(t, response.Body.String())
+	require.Equal(t, 1, len(messages))
+	require.Equal(t, "message_delete", messages[0].Event)
+	require.Equal(t, "delete-sched-seq", messages[0].SequenceID)
+}
+
+func TestServer_UpdateScheduledMessage_TopicScoped(t *testing.T) {
+	t.Parallel()
+	s := newTestServer(t, newTestConfig(t))
+
+	// Publish scheduled messages with same sequence ID in different topics
+	response := request(t, s, "PUT", "/topic1/shared-seq?delay=1h", "topic1 scheduled", nil)
+	require.Equal(t, 200, response.Code)
+
+	response = request(t, s, "PUT", "/topic2/shared-seq?delay=1h", "topic2 scheduled", nil)
+	require.Equal(t, 200, response.Code)
+
+	// Update scheduled message in topic1 only
+	response = request(t, s, "PUT", "/topic1/shared-seq?delay=2h", "topic1 updated", nil)
+	require.Equal(t, 200, response.Code)
+
+	// Verify topic1 has only the updated message
+	response = request(t, s, "GET", "/topic1/json?poll=1&scheduled=1", "", nil)
+	require.Equal(t, 200, response.Code)
+	messages := toMessages(t, response.Body.String())
+	require.Equal(t, 1, len(messages))
+	require.Equal(t, "topic1 updated", messages[0].Message)
+
+	// Verify topic2 still has its original scheduled message (not affected)
+	response = request(t, s, "GET", "/topic2/json?poll=1&scheduled=1", "", nil)
+	require.Equal(t, 200, response.Code)
+	messages = toMessages(t, response.Body.String())
+	require.Equal(t, 1, len(messages))
+	require.Equal(t, "topic2 scheduled", messages[0].Message)
+}
+
+func TestServer_UpdateScheduledMessage_WithAttachment(t *testing.T) {
+	t.Parallel()
+	s := newTestServer(t, newTestConfig(t))
+
+	// Publish a scheduled message with an attachment
+	content := util.RandomString(5000) // > 4096 to trigger attachment
+	response := request(t, s, "PUT", "/mytopic/attach-seq?delay=1h", content, nil)
+	require.Equal(t, 200, response.Code)
+	msg1 := toMessage(t, response.Body.String())
+	require.Equal(t, "attach-seq", msg1.SequenceID)
+	require.NotNil(t, msg1.Attachment)
+
+	// Verify attachment file exists
+	attachmentFile1 := filepath.Join(s.config.AttachmentCacheDir, msg1.ID)
+	require.FileExists(t, attachmentFile1)
+
+	// Update the scheduled message with a new attachment
+	newContent := util.RandomString(5000)
+	response = request(t, s, "PUT", "/mytopic/attach-seq?delay=2h", newContent, nil)
+	require.Equal(t, 200, response.Code)
+	msg2 := toMessage(t, response.Body.String())
+	require.Equal(t, "attach-seq", msg2.SequenceID)
+	require.NotEqual(t, msg1.ID, msg2.ID)
+
+	// Verify old attachment file was deleted
+	require.NoFileExists(t, attachmentFile1)
+
+	// Verify new attachment file exists
+	attachmentFile2 := filepath.Join(s.config.AttachmentCacheDir, msg2.ID)
+	require.FileExists(t, attachmentFile2)
+}
+
+func TestServer_DeleteScheduledMessage_WithAttachment(t *testing.T) {
+	t.Parallel()
+	s := newTestServer(t, newTestConfig(t))
+
+	// Publish a scheduled message with an attachment
+	content := util.RandomString(5000) // > 4096 to trigger attachment
+	response := request(t, s, "PUT", "/mytopic/delete-attach-seq?delay=1h", content, nil)
+	require.Equal(t, 200, response.Code)
+	msg := toMessage(t, response.Body.String())
+	require.Equal(t, "delete-attach-seq", msg.SequenceID)
+	require.NotNil(t, msg.Attachment)
+
+	// Verify attachment file exists
+	attachmentFile := filepath.Join(s.config.AttachmentCacheDir, msg.ID)
+	require.FileExists(t, attachmentFile)
+
+	// Delete the scheduled message
+	response = request(t, s, "DELETE", "/mytopic/delete-attach-seq", "", nil)
+	require.Equal(t, 200, response.Code)
+	deleteMsg := toMessage(t, response.Body.String())
+	require.Equal(t, "message_delete", deleteMsg.Event)
+
+	// Verify attachment file was deleted
+	require.NoFileExists(t, attachmentFile)
 }
 
 func newTestConfig(t *testing.T) *Config {

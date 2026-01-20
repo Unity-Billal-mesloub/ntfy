@@ -1261,9 +1261,84 @@ are the easiest), and then configure the following options:
 * `twilio-auth-token` is the Twilio auth token, e.g. affebeef258625862586258625862586
 * `twilio-phone-number` is the outgoing phone number you purchased, e.g. +18775132586 
 * `twilio-verify-service` is the Twilio Verify service SID, e.g. VA12345beefbeef67890beefbeef122586
+* `twilio-call-format` is the custom Twilio markup ([TwiML](https://www.twilio.com/docs/voice/twiml)) to use for phone calls (optional)
 
 After you have configured phone calls, create a [tier](#tiers) with a call limit (e.g. `ntfy tier create --call-limit=10 ...`),
 and then assign it to a user. Users may then use the `X-Call` header to receive a phone call when publishing a message.
+
+To customize the message that is spoken out loud, set the `twilio-call-format` option with [TwiML](https://www.twilio.com/docs/voice/twiml). The format is
+rendered as a [Go template](https://pkg.go.dev/text/template), so you can use the following fields from the message:
+
+* `{{.Topic}}` is the topic name
+* `{{.Message}}` is the message body
+* `{{.Title}}` is the message title
+* `{{.Tags}}` is a list of tags
+* `{{.Priority}}` is the message priority
+* `{{.Sender}}` is the IP address or username of the sender
+
+Here's an example:
+
+=== "Custom TwiML (English)"
+    ``` yaml
+    twilio-account: "AC12345beefbeef67890beefbeef122586"
+    twilio-auth-token: "affebeef258625862586258625862586"
+    twilio-phone-number: "+18775132586"
+    twilio-verify-service: "VA12345beefbeef67890beefbeef122586"
+    twilio-call-format: |
+      <Response>
+        <Pause length="1"/>
+        <Say loop="3">
+          Yo yo yo, you should totally check out this message for {{.Topic}}.
+          {{ if eq .Priority 5 }}
+            It's really really important, dude. So listen up!
+          {{ end }}
+          <break time="1s"/>
+          {{ if neq .Title "" }}
+            Bro, it's titled: {{.Title}}.
+          {{ end }}
+          <break time="1s"/>
+          {{.Message}}
+          <break time="1s"/>
+          That is all.
+          <break time="1s"/>
+          You know who this message is from? It is from {{.Sender}}.
+          <break time="3s"/>
+        </Say>
+        <Say>See ya!</Say>
+      </Response>
+    ```
+
+=== "Custom TwiML (German)"
+    ``` yaml
+    twilio-account: "AC12345beefbeef67890beefbeef122586"
+    twilio-auth-token: "affebeef258625862586258625862586"
+    twilio-phone-number: "+18775132586"
+    twilio-verify-service: "VA12345beefbeef67890beefbeef122586"
+    twilio-call-format: |
+      <Response>
+        <Pause length="1"/>
+        <Say loop="3" voice="alice" language="de-DE">
+          Du hast eine Nachricht zum Thema {{.Topic}}.
+          {{ if eq .Priority 5 }}
+            Achtung. Die Nachricht ist sehr wichtig.
+          {{ end }}
+          <break time="1s"/>
+          {{ if neq .Title "" }}
+            Titel der Nachricht: {{.Title}}.
+          {{ end }}
+          <break time="1s"/>
+          Nachricht:
+          <break time="1s"/>
+          {{.Message}}
+          <break time="1s"/>
+          Ende der Nachricht.
+          <break time="1s"/>
+          Diese Nachricht wurde vom Benutzer {{.Sender}} gesendet. Sie wird drei Mal wiederholt.
+          <break time="3s"/>
+        </Say>
+        <Say voice="alice" language="de-DE">Alla mol!</Say>
+      </Response>
+    ```
 
 ## Message limits
 There are a few message limits that you can configure:

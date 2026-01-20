@@ -4,13 +4,106 @@ and the [ntfy Android app](https://github.com/binwiederhier/ntfy-android/release
 
 ## Current stable releases
 
-| Component                                | Version | Release date |
-|------------------------------------------|---------|--------------|
-| ntfy server                              | v2.15.0 | Nov 16, 2025 |
-| ntfy Android app (_is being rolled out_) | v1.20.0 | Dec 28, 2025 |
-| ntfy iOS app                             | v1.3    | Nov 26, 2023 |
+| Component        | Version | Release date |
+|------------------|---------|--------------|
+| ntfy server      | v2.16.0 | Jan 19, 2026 |
+| ntfy Android app | v1.22.1 | Jan 20, 2026 |
+| ntfy iOS app     | v1.3    | Nov 26, 2023 |
 
 Please check out the release notes for [upcoming releases](#not-released-yet) below.
+
+### ntfy Android app v1.22.1
+Released January 20, 2026
+
+This release adds support for [updating and deleting notifications](publish.md#updating--deleting-notifications) (requires server v2.16.0),
+as well as [certificate management for self-signed certs and mTLS client certificates](subscribe/phone.md#manage-certificates),
+and a new connection error dialog to help [troubleshoot connection issues](subscribe/phone.md#troubleshooting).
+
+<div id="v1221-screenshots-1" class="screenshots">
+    <a href="../../static/img/android-screenshot-notification-update-1.png"><img src="../../static/img/android-screenshot-notification-update-1.png"/></a>
+    <a href="../../static/img/android-screenshot-notification-update-2.png"><img src="../../static/img/android-screenshot-notification-update-2.png"/></a>
+</div>
+
+<div id="v1221-screenshots-2" class="screenshots">
+    <a href="../../static/img/android-screenshot-certs-warning-dialog.jpg"><img src="../../static/img/android-screenshot-certs-warning-dialog.jpg"/></a>
+    <a href="../../static/img/android-screenshot-certs-manage.jpg"><img src="../../static/img/android-screenshot-certs-manage.jpg"/></a>
+    <a href="../../static/img/android-screenshot-connection-error-dialog.jpg"><img src="../../static/img/android-screenshot-connection-error-dialog.jpg"/></a>
+</div>
+
+**Features:**
+
+* Support for [updating and deleting notifications](publish.md#updating-deleting-notifications)
+  ([#303](https://github.com/binwiederhier/ntfy/issues/303), [#1536](https://github.com/binwiederhier/ntfy/pull/1536),
+  [ntfy-android#151](https://github.com/binwiederhier/ntfy-android/pull/151), thanks to [@wunter8](https://github.com/wunter8)
+  for the initial implementation)
+* Support for self-signed certs and client certs for mTLS ([#215](https://github.com/binwiederhier/ntfy/issues/215),
+  [#530](https://github.com/binwiederhier/ntfy/issues/530), [ntfy-android#149](https://github.com/binwiederhier/ntfy-android/pull/149),
+  thanks to [@cyb3rko](https://github.com/cyb3rko) for reviewing)
+* Connection error dialog to help diagnose connection issues
+
+**Bug fixes + maintenance:**
+
+* Use server-specific user for attachment downloads ([#1529](https://github.com/binwiederhier/ntfy/issues/1529),
+  thanks to [@ManInDark](https://github.com/ManInDark) for reporting and testing)
+* Fix crash in sharing dialog (thanks to [@rogeliodh](https://github.com/rogeliodh))
+* Fix crash when exiting multi-delete in detail view
+* Fix potential crashes with icon downloader and backuper
+
+## ntfy server v2.16.0
+Released January 19, 2026
+
+This release adds support for updating and deleting notifications, heartbeat-style / dead man's switch notifications,
+custom Twilio call formats, and makes `ntfy serve` work on Windows. It also adds a "New version available" banner to the web app.
+
+This one is very exciting, as it brings a lot of highly requested features to ntfy.
+
+**Features:**
+
+* Support for [updating and deleting notifications](publish.md#updating-deleting-notifications) ([#303](https://github.com/binwiederhier/ntfy/issues/303), [#1536](https://github.com/binwiederhier/ntfy/pull/1536),
+  [ntfy-android#151](https://github.com/binwiederhier/ntfy-android/pull/151), thanks to [@wunter8](https://github.com/wunter8) for the initial implementation)
+* Support for heartbeat-style / [dead man's switch](https://en.wikipedia.org/wiki/Dead_man%27s_switch) notifications aka
+  [updating and deleting scheduled notifications](publish.md#scheduled-delivery) ([#1556](https://github.com/binwiederhier/ntfy/pull/1556),
+  [#1142](https://github.com/binwiederhier/ntfy/pull/1142), [#954](https://github.com/binwiederhier/ntfy/issues/954),
+  thanks to [@GamerGirlandCo](https://github.com/GamerGirlandCo) for the initial implementation)
+* Configure [custom Twilio call format](config.md#phone-calls) for phone calls ([#1289](https://github.com/binwiederhier/ntfy/pull/1289), thanks to [@mmichaa](https://github.com/mmichaa) for the initial implementation)
+* `ntfy serve` now works on Windows, including support for running it as a Windows service ([#1104](https://github.com/binwiederhier/ntfy/issues/1104),
+  [#1552](https://github.com/binwiederhier/ntfy/pull/1552), originally [#1328](https://github.com/binwiederhier/ntfy/pull/1328),
+  thanks to [@wtf911](https://github.com/wtf911))
+* Web app: "New version available" banner ([#1554](https://github.com/binwiederhier/ntfy/pull/1554))
+
+## ntfy Android app v1.21.1
+Released January 6, 2026
+
+This is the first feature release in a long time. After all the SDK updates, fixes to comply with the Google Play policies
+and the framework updates, this release ships a lot of highly requested features: Sending messages through the app (WhatsApp-style),
+support for passing headers to your proxy, an in-app language switcher, and more.
+
+<div id="v1211-screenshots" class="screenshots">
+    <a href="../../static/img/android-screenshot-publish-message-bar.jpg"><img src="../../static/img/android-screenshot-publish-message-bar.jpg"/></a>
+    <a href="../../static/img/android-screenshot-publish-dialog.jpg"><img src="../../static/img/android-screenshot-publish-dialog.jpg"/></a>
+    <a href="../../static/img/android-screenshot-custom-headers.jpg"><img src="../../static/img/android-screenshot-custom-headers.jpg"/></a>
+    <a href="../../static/img/android-screenshot-language-selection.jpg"><img src="../../static/img/android-screenshot-language-selection.jpg"/></a>
+</div>
+
+If you are waiting for a feature, please 👍 the corresponding [GitHub issue](https://github.com/binwiederhier/ntfy/issues?q=is%3Aissue%20state%3Aopen%20sort%3Areactions-%2B1-desc).
+If you like ntfy, please consider purchasing [ntfy Pro](https://ntfy.sh/app) to support us.
+
+**Features:**
+
+* Allow publishing messages through the message bar and publish dialog ([#98](https://github.com/binwiederhier/ntfy/issues/98), [ntfy-android#144](https://github.com/binwiederhier/ntfy-android/pull/144))
+* Define custom HTTP headers to support authenticated proxies, tunnels and SSO ([ntfy-android#116](https://github.com/binwiederhier/ntfy-android/issues/116), [#1018](https://github.com/binwiederhier/ntfy/issues/1018), [ntfy-android#132](https://github.com/binwiederhier/ntfy-android/pull/132), [ntfy-android#146](https://github.com/binwiederhier/ntfy-android/pull/146), thanks to [@CrazyWolf13](https://github.com/CrazyWolf13))
+* Implement UnifiedPush "raise to foreground" requirement ([ntfy-android#98](https://github.com/binwiederhier/ntfy-android/pull/98), [ntfy-android#148](https://github.com/binwiederhier/ntfy-android/pull/148), thanks to [@p1gp1g](https://github.com/p1gp1g))
+* Language selector to allow overriding the system language ([#1508](https://github.com/binwiederhier/ntfy/issues/1508), [ntfy-android#145](https://github.com/binwiederhier/ntfy-android/pull/145), thanks to [@hudsonm62](https://github.com/hudsonm62) for reporting)
+* Highlight phone numbers and email addresses in notifications ([#957](https://github.com/binwiederhier/ntfy/issues/957), [ntfy-android#71](https://github.com/binwiederhier/ntfy-android/pull/71), thanks to [@brennenputh](https://github.com/brennenputh), and [@XylenSky](https://github.com/XylenSky) for reporting)
+* Support for port and display name in [ntfy://](subscribe/phone.md#ntfy-links) links ([ntfy-android#130](https://github.com/binwiederhier/ntfy-android/pull/130), thanks to [@godovski](https://github.com/godovski))
+
+**Bug fixes + maintenance:**
+
+* Add support for (technically incorrect) 'image/jpg' MIME type ([ntfy-android#142](https://github.com/binwiederhier/ntfy-android/pull/142), thanks to [@Murilobeluco](https://github.com/Murilobeluco))
+* Unify "copy to clipboard" notifications, use Android 13 style ([ntfy-android#61](https://github.com/binwiederhier/ntfy-android/pull/61), thanks to [@thgoebel](https://github.com/thgoebel))
+* Fix crash in user add dialog (onAddUser)
+* Fix ForegroundServiceDidNotStartInTimeException (attempt 2, see [#1520](https://github.com/binwiederhier/ntfy/issues/1520))
+* Hide "Exact alarms" setting if battery optimization exemption has been granted ([#1456](https://github.com/binwiederhier/ntfy/issues/1456), thanks for reporting [@HappyLer](https://github.com/HappyLer))
 
 ## ntfy Android app v1.20.0
 Released December 28, 2025
@@ -1572,21 +1665,4 @@ and the [ntfy Android app](https://github.com/binwiederhier/ntfy-android/release
 
 ## Not released yet
 
-### ntfy Android app v1.21.1-rc1 (IN TESTING)
-
-**Features:**
-
-* Allow publishing messages through the message bar and publish dialog ([#98](https://github.com/binwiederhier/ntfy/issues/98), [ntfy-android#144](https://github.com/binwiederhier/ntfy-android/pull/144))
-* Define custom HTTP headers to support authenticated proxies, tunnels and SSO ([ntfy-android#116](https://github.com/binwiederhier/ntfy-android/issues/116), [#1018](https://github.com/binwiederhier/ntfy/issues/1018), [ntfy-android#132](https://github.com/binwiederhier/ntfy-android/pull/132), [ntfy-android#146](https://github.com/binwiederhier/ntfy-android/pull/146), thanks to [@CrazyWolf13](https://github.com/CrazyWolf13))
-* Implement UnifiedPush "raise to foreground" requirement ([ntfy-android#98](https://github.com/binwiederhier/ntfy-android/pull/98), [ntfy-android#148](https://github.com/binwiederhier/ntfy-android/pull/148), thanks to [@p1gp1g](https://github.com/p1gp1g))
-* Language selector to allow overriding the system language ([#1508](https://github.com/binwiederhier/ntfy/issues/1508), [ntfy-android#145](https://github.com/binwiederhier/ntfy-android/pull/145), thanks to [@hudsonm62](https://github.com/hudsonm62) for reporting)
-* Highlight phone numbers and email addresses in notifications ([#957](https://github.com/binwiederhier/ntfy/issues/957), [ntfy-android#71](https://github.com/binwiederhier/ntfy-android/pull/71), thanks to [@brennenputh](https://github.com/brennenputh), and [@XylenSky](https://github.com/XylenSky) for reporting)
-* Support for port and display name in [ntfy://](subscribe/phone.md#ntfy-links) links ([ntfy-android#130](https://github.com/binwiederhier/ntfy-android/pull/130), thanks to [@godovski](https://github.com/godovski))
-
-**Bug fixes + maintenance:**
-
-* Add support for (technically incorrect) 'image/jpg' MIME type ([ntfy-android#142](https://github.com/binwiederhier/ntfy-android/pull/142), thanks to [@Murilobeluco](https://github.com/Murilobeluco))
-* Unify "copy to clipboard" notifications, use Android 13 style ([ntfy-android#61](https://github.com/binwiederhier/ntfy-android/pull/61), thanks to [@thgoebel](https://github.com/thgoebel))
-* Fix crash in user add dialog (onAddUser)
-* Fix ForegroundServiceDidNotStartInTimeException (attempt 2, see [#1520](https://github.com/binwiederhier/ntfy/issues/1520))
-* Hide "Exact alarms" setting if battery optimization exemption has been granted ([#1456](https://github.com/binwiederhier/ntfy/issues/1456), thanks for reporting [@HappyLer](https://github.com/HappyLer))
+_Nothing here_

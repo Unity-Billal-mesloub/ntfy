@@ -96,8 +96,8 @@ appreciated.
 ## Can I email you? Can I DM you on Discord/Matrix?
 For community support, please use the public channels listed on the [contact page](contact.md). I generally 
 **do not respond to direct messages** about ntfy, unless you are paying for a [ntfy Pro](https://ntfy.sh/#pricing) 
-plan (see [paid support](contact.md#paid-support-ntfy-pro-subscribers)), or you are inquiring about business 
-opportunities (see [general inquiries](contact.md#general-inquiries)).
+plan (see [paid support](contact.md#paid-support)), or you are inquiring about business 
+opportunities (see [other inquiries](contact.md#other-inquiries)).
 
 I am sorry, but answering individual questions about ntfy on a 1-on-1 basis is not scalable. Answering your questions 
 in public forums benefits others, since I can link to the discussion at a later point in time, or other users

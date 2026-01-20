@@ -1,8 +1,13 @@
 package server
 
 import (
+	"crypto/sha256"
+	"encoding/json"
+	"fmt"
 	"io/fs"
 	"net/netip"
+	"reflect"
+	"text/template"
 	"time"
 
 	"heckel.io/ntfy/v2/user"
@@ -11,8 +16,6 @@ import (
 // Defines default config settings (excluding limits, see below)
 const (
 	DefaultListenHTTP                           = ":80"
-	DefaultConfigFile                           = "/etc/ntfy/server.yml"
-	DefaultTemplateDir                          = "/etc/ntfy/templates"
 	DefaultCacheDuration                        = 12 * time.Hour
 	DefaultCacheBatchTimeout                    = time.Duration(0)
 	DefaultKeepaliveInterval                    = 45 * time.Second // Not too frequently to save battery (Android read timeout used to be 77s!)
@@ -24,6 +27,12 @@ const (
 	DefaultFirebasePollInterval                 = 20 * time.Minute // ~poll topic (iOS), max. 2-3 times per hour (see docs)
 	DefaultFirebaseQuotaExceededPenaltyDuration = 10 * time.Minute // Time that over-users are locked out of Firebase if it returns "quota exceeded"
 	DefaultStripePriceCacheDuration             = 3 * time.Hour    // Time to keep Stripe prices cached in memory before a refresh is needed
+)
+
+// Platform-specific default paths (set in config_unix.go or config_windows.go)
+var (
+	DefaultConfigFile  string
+	DefaultTemplateDir string
 )
 
 // Defines default Web Push settings
@@ -128,6 +137,7 @@ type Config struct {
 	TwilioCallsBaseURL                   string
 	TwilioVerifyBaseURL                  string
 	TwilioVerifyService                  string
+	TwilioCallFormat                     *template.Template
 	MetricsEnable                        bool
 	MetricsListenHTTP                    string
 	ProfileListenHTTP                    string
@@ -173,7 +183,9 @@ type Config struct {
 	WebPushStartupQueries                string
 	WebPushExpiryDuration                time.Duration
 	WebPushExpiryWarningDuration         time.Duration
-	Version                              string // injected by App
+	BuildVersion                         string // Injected by App
+	BuildDate                            string // Injected by App
+	BuildCommit                          string // Injected by App
 }
 
 // NewConfig instantiates a default new server config
@@ -226,6 +238,7 @@ func NewConfig() *Config {
 		TwilioPhoneNumber:                    "",
 		TwilioVerifyBaseURL:                  "https://verify.twilio.com", // Override for tests
 		TwilioVerifyService:                  "",
+		TwilioCallFormat:                     nil,
 		MessageSizeLimit:                     DefaultMessageSizeLimit,
 		MessageDelayMin:                      DefaultMessageDelayMin,
 		MessageDelayMax:                      DefaultMessageDelayMax,
@@ -259,12 +272,32 @@ func NewConfig() *Config {
 		EnableReservations:                   false,
 		RequireLogin:                         false,
 		AccessControlAllowOrigin:             "*",
-		Version:                              "",
 		WebPushPrivateKey:                    "",
 		WebPushPublicKey:                     "",
 		WebPushFile:                          "",
 		WebPushEmailAddress:                  "",
 		WebPushExpiryDuration:                DefaultWebPushExpiryDuration,
 		WebPushExpiryWarningDuration:         DefaultWebPushExpiryWarningDuration,
+		BuildVersion:                         "",
+		BuildDate:                            "",
+		BuildCommit:                          "",
 	}
+}
+
+// Hash computes an SHA-256 hash of the configuration. This is used to detect
+// configuration changes for the web app version check feature. It uses reflection
+// to include all JSON-serializable fields automatically.
+func (c *Config) Hash() string {
+	v := reflect.ValueOf(*c)
+	t := v.Type()
+	var result string
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldName := t.Field(i).Name
+		// Try to marshal the field and skip if it fails (e.g. *template.Template, netip.Prefix)
+		if b, err := json.Marshal(field.Interface()); err == nil {
+			result += fmt.Sprintf("%s:%s|", fieldName, string(b))
+		}
+	}
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(result)))
 }

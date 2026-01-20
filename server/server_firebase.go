@@ -143,6 +143,15 @@ func toFirebaseMessage(m *message, auther user.Auther) (*messaging.Message, erro
 			"poll_id": m.PollID,
 		}
 		apnsConfig = createAPNSAlertConfig(m, data)
+	case messageDeleteEvent, messageClearEvent:
+		data = map[string]string{
+			"id":          m.ID,
+			"time":        fmt.Sprintf("%d", m.Time),
+			"event":       m.Event,
+			"topic":       m.Topic,
+			"sequence_id": m.SequenceID,
+		}
+		apnsConfig = createAPNSBackgroundConfig(data)
 	case messageEvent:
 		if auther != nil {
 			// If "anonymous read" for a topic is not allowed, we cannot send the message along
@@ -161,6 +170,7 @@ func toFirebaseMessage(m *message, auther user.Auther) (*messaging.Message, erro
 			"time":         fmt.Sprintf("%d", m.Time),
 			"event":        m.Event,
 			"topic":        m.Topic,
+			"sequence_id":  m.SequenceID,
 			"priority":     fmt.Sprintf("%d", m.Priority),
 			"tags":         strings.Join(m.Tags, ","),
 			"click":        m.Click,

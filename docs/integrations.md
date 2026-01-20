@@ -90,7 +90,7 @@ I've added a ⭐ to projects or posts that have a significant following, or had 
 - [ntfy-desktop](https://github.com/Aetherinox/ntfy-desktop) - Desktop client for Windows, Linux, and MacOS with push notifications
 - [ntfy svelte front-end](https://github.com/novatorem/Ntfy) - Front-end built with svelte
 - [wio-ntfy-ticker](https://github.com/nachotp/wio-ntfy-ticker) - Ticker display for a ntfy.sh topic
-- [ntfysh-windows](https://github.com/lucas-bortoli/ntfysh-windows) - A ntfy client for Windows Desktop
+- [ntfysh-windows](https://github.com/mshafer1/ntfysh-windows) - A ntfy client for Windows Desktop
 - [ntfyr](https://github.com/haxwithaxe/ntfyr) - A simple commandline tool to send notifications to ntfy
 - [ntfy.py](https://github.com/ioqy/ntfy-client-python) - ntfy.py is a simple nfty.sh client for sending notifications
 - [wlzntfy](https://github.com/Walzen-Group/ntfy-toaster) - A minimalistic, receive-only toast notification client for Windows 11

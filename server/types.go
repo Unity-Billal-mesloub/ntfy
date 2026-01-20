@@ -12,10 +12,12 @@ import (
 
 // List of possible events
 const (
-	openEvent        = "open"
-	keepaliveEvent   = "keepalive"
-	messageEvent     = "message"
-	pollRequestEvent = "poll_request"
+	openEvent          = "open"
+	keepaliveEvent     = "keepalive"
+	messageEvent       = "message"
+	messageDeleteEvent = "message_delete"
+	messageClearEvent  = "message_clear"
+	pollRequestEvent   = "poll_request"
 )
 
 const (
@@ -24,10 +26,11 @@ const (
 
 // message represents a message published to a topic
 type message struct {
-	ID          string      `json:"id"`                // Random message ID
-	Time        int64       `json:"time"`              // Unix time in seconds
-	Expires     int64       `json:"expires,omitempty"` // Unix time in seconds (not required for open/keepalive)
-	Event       string      `json:"event"`             // One of the above
+	ID          string      `json:"id"`                    // Random message ID
+	SequenceID  string      `json:"sequence_id,omitempty"` // Message sequence ID for updating message contents (omitted if same as ID)
+	Time        int64       `json:"time"`                  // Unix time in seconds
+	Expires     int64       `json:"expires,omitempty"`     // Unix time in seconds (not required for open/keepalive)
+	Event       string      `json:"event"`                 // One of the above
 	Topic       string      `json:"topic"`
 	Title       string      `json:"title,omitempty"`
 	Message     string      `json:"message,omitempty"`
@@ -39,18 +42,19 @@ type message struct {
 	Attachment  *attachment `json:"attachment,omitempty"`
 	PollID      string      `json:"poll_id,omitempty"`
 	ContentType string      `json:"content_type,omitempty"` // text/plain by default (if empty), or text/markdown
-	Encoding    string      `json:"encoding,omitempty"`     // empty for raw UTF-8, or "base64" for encoded bytes
+	Encoding    string      `json:"encoding,omitempty"`     // Empty for raw UTF-8, or "base64" for encoded bytes
 	Sender      netip.Addr  `json:"-"`                      // IP address of uploader, used for rate limiting
 	User        string      `json:"-"`                      // UserID of the uploader, used to associated attachments
 }
 
 func (m *message) Context() log.Context {
 	fields := map[string]any{
-		"topic":             m.Topic,
-		"message_id":        m.ID,
-		"message_time":      m.Time,
-		"message_event":     m.Event,
-		"message_body_size": len(m.Message),
+		"topic":               m.Topic,
+		"message_id":          m.ID,
+		"message_sequence_id": m.SequenceID,
+		"message_time":        m.Time,
+		"message_event":       m.Event,
+		"message_body_size":   len(m.Message),
 	}
 	if m.Sender.IsValid() {
 		fields["message_sender"] = m.Sender.String()
@@ -59,6 +63,17 @@ func (m *message) Context() log.Context {
 		fields["message_user"] = m.User
 	}
 	return fields
+}
+
+// forJSON returns a copy of the message suitable for JSON output.
+// It clears the SequenceID if it equals the ID to reduce redundancy.
+func (m *message) forJSON() *message {
+	if m.SequenceID == m.ID {
+		clone := *m
+		clone.SequenceID = ""
+		return &clone
+	}
+	return m
 }
 
 type attachment struct {
@@ -91,22 +106,23 @@ func newAction() *action {
 
 // publishMessage is used as input when publishing as JSON
 type publishMessage struct {
-	Topic    string   `json:"topic"`
-	Title    string   `json:"title"`
-	Message  string   `json:"message"`
-	Priority int      `json:"priority"`
-	Tags     []string `json:"tags"`
-	Click    string   `json:"click"`
-	Icon     string   `json:"icon"`
-	Actions  []action `json:"actions"`
-	Attach   string   `json:"attach"`
-	Markdown bool     `json:"markdown"`
-	Filename string   `json:"filename"`
-	Email    string   `json:"email"`
-	Call     string   `json:"call"`
-	Cache    string   `json:"cache"`    // use string as it defaults to true (or use &bool instead)
-	Firebase string   `json:"firebase"` // use string as it defaults to true (or use &bool instead)
-	Delay    string   `json:"delay"`
+	Topic      string   `json:"topic"`
+	SequenceID string   `json:"sequence_id"`
+	Title      string   `json:"title"`
+	Message    string   `json:"message"`
+	Priority   int      `json:"priority"`
+	Tags       []string `json:"tags"`
+	Click      string   `json:"click"`
+	Icon       string   `json:"icon"`
+	Actions    []action `json:"actions"`
+	Attach     string   `json:"attach"`
+	Markdown   bool     `json:"markdown"`
+	Filename   string   `json:"filename"`
+	Email      string   `json:"email"`
+	Call       string   `json:"call"`
+	Cache      string   `json:"cache"`    // use string as it defaults to true (or use &bool instead)
+	Firebase   string   `json:"firebase"` // use string as it defaults to true (or use &bool instead)
+	Delay      string   `json:"delay"`
 }
 
 // messageEncoder is a function that knows how to encode a message
@@ -142,6 +158,13 @@ func newDefaultMessage(topic, msg string) *message {
 func newPollRequestMessage(topic, pollID string) *message {
 	m := newMessage(pollRequestEvent, topic, newMessageBody)
 	m.PollID = pollID
+	return m
+}
+
+// newActionMessage creates a new action message (message_delete or message_clear)
+func newActionMessage(event, topic, sequenceID string) *message {
+	m := newMessage(event, topic, "")
+	m.SequenceID = sequenceID
 	return m
 }
 
@@ -223,7 +246,7 @@ func parseQueryFilters(r *http.Request) (*queryFilter, error) {
 }
 
 func (q *queryFilter) Pass(msg *message) bool {
-	if msg.Event != messageEvent {
+	if msg.Event != messageEvent && msg.Event != messageDeleteEvent && msg.Event != messageClearEvent {
 		return true // filters only apply to messages
 	} else if q.ID != "" && msg.ID != q.ID {
 		return false
@@ -459,6 +482,7 @@ type apiConfigResponse struct {
 	BillingContact     string   `json:"billing_contact"`
 	WebPushPublicKey   string   `json:"web_push_public_key"`
 	DisallowedTopics   []string `json:"disallowed_topics"`
+	ConfigHash         string   `json:"config_hash"`
 }
 
 type apiAccountBillingPrices struct {

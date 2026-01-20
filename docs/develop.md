@@ -441,6 +441,6 @@ To have instant notifications/better notification delivery when using firebase, 
 1. In XCode, find the NTFY app target. **Not** the NSE app target.
 1. Find the Asset/ folder in the project navigator
 1. Drag the `GoogleService-Info.plist` file into the Asset/ folder that you get from the firebase console. It can be 
-   found in the "Project settings" > "General" > "Your apps"  with a button labled "GoogleService-Info.plist"
+   found in the "Project settings" > "General" > "Your apps"  with a button labeled "GoogleService-Info.plist"
 
 After that, you should be all set!
