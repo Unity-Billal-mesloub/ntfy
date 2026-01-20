@@ -34,34 +34,6 @@ info:
 
     Requests may be rate-limited based on IP address or user tier.
 
-    ## CORS Proxy
-
-    If you are running ntfy locally and accessing this documentation from "localhost" and attempting to make requests to a hosted ntfy server (like ntfy.sh) you may need to enable the "CORS Proxy" checkbox in the top right corner of the page. 
-    This will proxy the requests through the Scalar server to the hosted ntfy server. **BE Aware** this will count against the rate limit of the Scalar Proxy Server. So you may recieve 429 responses from the remote ntfy server.. 
-
-    ## Experimental Endpoints
-
-    The following endpoints are experimental and may be changed or removed in the future. Use at your own risk.
-    
-    - Account Management Endpoints
-    
-    - Admin Endpoints
-
-    ## Add your own ntfy server
-    
-    To add your own ntfy server to the drop down menu, add the following to the `servers` section of "docs/api/openapi.yaml" (or replace the exsiting server with your own https://myntfyserver.editinyaml.com):
-    
-    ```yaml
-
-    servers:
-      - url: https://your-ntfy-instance.com
-      
-        description: Your custom server
-    
-    ```
-    
-    Once you have added your own custom server you will need to run `mkdocs build` to rebuild the documentation.
-
     '
   version: 2.0.0
   contact:
@@ -71,29 +43,34 @@ info:
       name: Apache-2.0 OR GPLv2
       url: https://github.com/binwiederhier/ntfy
 servers:
-- url: https://ntfy.sh
-  description: Public ntfy server
-- url: https://myntfyserver.editinyaml.com
-  description: My NTFY Server
+  - url: https://ntfy.sh
+    description: Public ntfy server
 tags:
-- name: Publish
-  description: Publishing messages to topics
-- name: Subscribe
-  description: Subscribing to topics and receiving messages
-- name: Account - **EXPERIMENTAL**
-  description: User account management (EXPERIMENTAL) - THESE ENDPOINTS MAY CHANGE, BE REMOVED, OR ADDED TO IN THE FUTURE.
-- name: Admin - **EXPERIMENTAL**
-  description: Administrative operations (EXPERIMENTAL) - THESE ENDPOINTS MAY CHANGE, BE REMOVED, OR ADDED TO IN THE FUTURE.
-- name: Matrix 
-  description: Matrix push gateway 
-- name: WebPush 
-  description: Web Push subscriptions 
+  - name: Publish API
+    description: |
+      Publishing messages to topics.
+      
+      **For detailed examples and usage, please check out the [Publishing documentation](../publish/).**
+  - name: Subscribe API
+    description: Subscribing to topics and receiving messages
+  - name: Account API (Internal)
+    description: |
+      User account management.
+      
+      **These are internal endpoints and may change or be removed in the future.**
+  - name: Admin API (Internal)
+    description: |
+      Administrative operations.
+      
+      **These are internal endpoints and may change or be removed in the future.**
+  - name: Matrix
+    description: Matrix push gateway
 paths:
   /{topic}:
     post:
       tags:
-      - Publish
-      summary: Publish message to topic
+        - Publish API
+      summary: Publish message
       description: 'Publishes a message to a topic. The message body can be plain
         text, or you can use various headers to customize the notification.
 
@@ -104,34 +81,34 @@ paths:
         '
       operationId: publishMessage
       security:
-      - {}
-      - BasicAuth: []
-      - BearerAuth: []
+        - { }
+        - BasicAuth: [ ]
+        - BearerAuth: [ ]
       parameters:
-      - name: topic
-        in: path
-        required: true
-        description: Topic name (1-64 characters, alphanumeric, dash, underscore)
-        schema:
-          type: string
-          pattern: ^[-_A-Za-z0-9]{1,64}$
-      - $ref: '#/components/parameters/XTitle'
-      - $ref: '#/components/parameters/XPriority'
-      - $ref: '#/components/parameters/XTags'
-      - $ref: '#/components/parameters/XClick'
-      - $ref: '#/components/parameters/XIcon'
-      - $ref: '#/components/parameters/XAttach'
-      - $ref: '#/components/parameters/XFilename'
-      - $ref: '#/components/parameters/XActions'
-      - $ref: '#/components/parameters/XEmail'
-      - $ref: '#/components/parameters/XCall'
-      - $ref: '#/components/parameters/XDelay'
-      - $ref: '#/components/parameters/XCache'
-      - $ref: '#/components/parameters/XFirebase'
-      - $ref: '#/components/parameters/XMarkdown'
-      - $ref: '#/components/parameters/XTemplate'
-      - $ref: '#/components/parameters/XPollId'
-      - $ref: '#/components/parameters/XUnifiedPush'
+        - name: topic
+          in: path
+          required: true
+          description: Topic name (1-64 characters, alphanumeric, dash, underscore)
+          schema:
+            type: string
+            pattern: ^[-_A-Za-z0-9]{1,64}$
+        - $ref: '#/components/parameters/XTitle'
+        - $ref: '#/components/parameters/XPriority'
+        - $ref: '#/components/parameters/XTags'
+        - $ref: '#/components/parameters/XClick'
+        - $ref: '#/components/parameters/XIcon'
+        - $ref: '#/components/parameters/XAttach'
+        - $ref: '#/components/parameters/XFilename'
+        - $ref: '#/components/parameters/XActions'
+        - $ref: '#/components/parameters/XEmail'
+        - $ref: '#/components/parameters/XCall'
+        - $ref: '#/components/parameters/XDelay'
+        - $ref: '#/components/parameters/XCache'
+        - $ref: '#/components/parameters/XFirebase'
+        - $ref: '#/components/parameters/XMarkdown'
+        - $ref: '#/components/parameters/XTemplate'
+        - $ref: '#/components/parameters/XPollId'
+        - $ref: '#/components/parameters/XUnifiedPush'
       requestBody:
         description: Message body (plain text or binary data)
         content:
@@ -157,39 +134,39 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     put:
       tags:
-      - Publish
-      summary: Publish message to topic (PUT)
+        - Publish API
+      summary: Publish message (PUT)
       description: Same as POST but uses PUT method
       operationId: publishMessagePut
       security:
-      - {}
-      - BasicAuth: []
-      - BearerAuth: []
+        - { }
+        - BasicAuth: [ ]
+        - BearerAuth: [ ]
       parameters:
-      - name: topic
-        in: path
-        required: true
-        description: Topic name
-        schema:
-          type: string
-          pattern: ^[-_A-Za-z0-9]{1,64}$
-      - $ref: '#/components/parameters/XTitle'
-      - $ref: '#/components/parameters/XPriority'
-      - $ref: '#/components/parameters/XTags'
-      - $ref: '#/components/parameters/XClick'
-      - $ref: '#/components/parameters/XIcon'
-      - $ref: '#/components/parameters/XAttach'
-      - $ref: '#/components/parameters/XFilename'
-      - $ref: '#/components/parameters/XActions'
-      - $ref: '#/components/parameters/XEmail'
-      - $ref: '#/components/parameters/XCall'
-      - $ref: '#/components/parameters/XDelay'
-      - $ref: '#/components/parameters/XCache'
-      - $ref: '#/components/parameters/XFirebase'
-      - $ref: '#/components/parameters/XMarkdown'
-      - $ref: '#/components/parameters/XTemplate'
-      - $ref: '#/components/parameters/XPollId'
-      - $ref: '#/components/parameters/XUnifiedPush'
+        - name: topic
+          in: path
+          required: true
+          description: Topic name
+          schema:
+            type: string
+            pattern: ^[-_A-Za-z0-9]{1,64}$
+        - $ref: '#/components/parameters/XTitle'
+        - $ref: '#/components/parameters/XPriority'
+        - $ref: '#/components/parameters/XTags'
+        - $ref: '#/components/parameters/XClick'
+        - $ref: '#/components/parameters/XIcon'
+        - $ref: '#/components/parameters/XAttach'
+        - $ref: '#/components/parameters/XFilename'
+        - $ref: '#/components/parameters/XActions'
+        - $ref: '#/components/parameters/XEmail'
+        - $ref: '#/components/parameters/XCall'
+        - $ref: '#/components/parameters/XDelay'
+        - $ref: '#/components/parameters/XCache'
+        - $ref: '#/components/parameters/XFirebase'
+        - $ref: '#/components/parameters/XMarkdown'
+        - $ref: '#/components/parameters/XTemplate'
+        - $ref: '#/components/parameters/XPollId'
+        - $ref: '#/components/parameters/XUnifiedPush'
       requestBody:
         description: Message body
         content:
@@ -213,45 +190,10 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/TooManyRequests'
-    get:
-      tags:
-      - Subscribe
-      summary: Get topic (web UI)
-      description: Returns the web UI for the topic
-      operationId: getTopic
-      parameters:
-      - name: topic
-        in: path
-        required: true
-        description: Topic name
-        schema:
-          type: string
-          pattern: ^[-_A-Za-z0-9]{1,64}$
-      - name: x-unifiedpush
-        in: query
-        description: UnifiedPush discovery
-        schema:
-          type: boolean
-      responses:
-        '200':
-          description: Web UI or UnifiedPush info
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  unifiedpush:
-                    type: object
-                    properties:
-                      version:
-                        type: integer
-            text/html:
-              schema:
-                type: string
   /{topic}/json:
     get:
       tags:
-      - Subscribe
+        - Subscribe API
       summary: Subscribe to JSON stream
       description: 'Subscribes to a topic and returns a streaming HTTP response with
         JSON messages.
@@ -265,25 +207,25 @@ paths:
         '
       operationId: subscribeJson
       security:
-      - {}
-      - BasicAuth: []
-      - BearerAuth: []
+        - { }
+        - BasicAuth: [ ]
+        - BearerAuth: [ ]
       parameters:
-      - name: topic
-        in: path
-        required: true
-        description: Topic name or comma-separated list of topics
-        schema:
-          type: string
-          pattern: ^[-_A-Za-z0-9]{1,64}(,[-_A-Za-z0-9]{1,64})*$
-      - $ref: '#/components/parameters/Poll'
-      - $ref: '#/components/parameters/Since'
-      - $ref: '#/components/parameters/Scheduled'
-      - $ref: '#/components/parameters/FilterId'
-      - $ref: '#/components/parameters/FilterMessage'
-      - $ref: '#/components/parameters/FilterTitle'
-      - $ref: '#/components/parameters/FilterPriority'
-      - $ref: '#/components/parameters/FilterTags'
+        - name: topic
+          in: path
+          required: true
+          description: Topic name or comma-separated list of topics
+          schema:
+            type: string
+            pattern: ^[-_A-Za-z0-9]{1,64}(,[-_A-Za-z0-9]{1,64})*$
+        - $ref: '#/components/parameters/Poll'
+        - $ref: '#/components/parameters/Since'
+        - $ref: '#/components/parameters/Scheduled'
+        - $ref: '#/components/parameters/FilterId'
+        - $ref: '#/components/parameters/FilterMessage'
+        - $ref: '#/components/parameters/FilterTitle'
+        - $ref: '#/components/parameters/FilterPriority'
+        - $ref: '#/components/parameters/FilterTags'
       responses:
         '200':
           description: Streaming JSON response
@@ -302,8 +244,8 @@ paths:
   /{topic}/sse:
     get:
       tags:
-      - Subscribe
-      summary: Subscribe to Server-Sent Events stream
+        - Subscribe API
+      summary: Subscribe to SSE stream
       description: 'Subscribes to a topic using Server-Sent Events (SSE). This is
         ideal for JavaScript clients using EventSource.
 
@@ -313,25 +255,25 @@ paths:
         '
       operationId: subscribeSse
       security:
-      - {}
-      - BasicAuth: []
-      - BearerAuth: []
+        - { }
+        - BasicAuth: [ ]
+        - BearerAuth: [ ]
       parameters:
-      - name: topic
-        in: path
-        required: true
-        description: Topic name or comma-separated list of topics
-        schema:
-          type: string
-          pattern: ^[-_A-Za-z0-9]{1,64}(,[-_A-Za-z0-9]{1,64})*$
-      - $ref: '#/components/parameters/Poll'
-      - $ref: '#/components/parameters/Since'
-      - $ref: '#/components/parameters/Scheduled'
-      - $ref: '#/components/parameters/FilterId'
-      - $ref: '#/components/parameters/FilterMessage'
-      - $ref: '#/components/parameters/FilterTitle'
-      - $ref: '#/components/parameters/FilterPriority'
-      - $ref: '#/components/parameters/FilterTags'
+        - name: topic
+          in: path
+          required: true
+          description: Topic name or comma-separated list of topics
+          schema:
+            type: string
+            pattern: ^[-_A-Za-z0-9]{1,64}(,[-_A-Za-z0-9]{1,64})*$
+        - $ref: '#/components/parameters/Poll'
+        - $ref: '#/components/parameters/Since'
+        - $ref: '#/components/parameters/Scheduled'
+        - $ref: '#/components/parameters/FilterId'
+        - $ref: '#/components/parameters/FilterMessage'
+        - $ref: '#/components/parameters/FilterTitle'
+        - $ref: '#/components/parameters/FilterPriority'
+        - $ref: '#/components/parameters/FilterTags'
       responses:
         '200':
           description: SSE stream
@@ -348,7 +290,7 @@ paths:
   /{topic}/raw:
     get:
       tags:
-      - Subscribe
+        - Subscribe API
       summary: Subscribe to raw stream
       description: 'Subscribes to a topic and returns raw text messages, one per line.
 
@@ -360,20 +302,20 @@ paths:
         '
       operationId: subscribeRaw
       security:
-      - {}
-      - BasicAuth: []
-      - BearerAuth: []
+        - { }
+        - BasicAuth: [ ]
+        - BearerAuth: [ ]
       parameters:
-      - name: topic
-        in: path
-        required: true
-        description: Topic name or comma-separated list of topics
-        schema:
-          type: string
-          pattern: ^[-_A-Za-z0-9]{1,64}(,[-_A-Za-z0-9]{1,64})*$
-      - $ref: '#/components/parameters/Poll'
-      - $ref: '#/components/parameters/Since'
-      - $ref: '#/components/parameters/Scheduled'
+        - name: topic
+          in: path
+          required: true
+          description: Topic name or comma-separated list of topics
+          schema:
+            type: string
+            pattern: ^[-_A-Za-z0-9]{1,64}(,[-_A-Za-z0-9]{1,64})*$
+        - $ref: '#/components/parameters/Poll'
+        - $ref: '#/components/parameters/Since'
+        - $ref: '#/components/parameters/Scheduled'
       responses:
         '200':
           description: Raw text stream
@@ -390,7 +332,7 @@ paths:
   /{topic}/ws:
     get:
       tags:
-      - Subscribe
+        - Subscribe API
       summary: Subscribe via WebSocket
       description: 'Subscribes to a topic using WebSocket. Messages are sent as JSON
         objects.
@@ -404,25 +346,25 @@ paths:
         '
       operationId: subscribeWs
       security:
-      - {}
-      - BasicAuth: []
-      - BearerAuth: []
+        - { }
+        - BasicAuth: [ ]
+        - BearerAuth: [ ]
       parameters:
-      - name: topic
-        in: path
-        required: true
-        description: Topic name or comma-separated list of topics
-        schema:
-          type: string
-          pattern: ^[-_A-Za-z0-9]{1,64}(,[-_A-Za-z0-9]{1,64})*$
-      - $ref: '#/components/parameters/Poll'
-      - $ref: '#/components/parameters/Since'
-      - $ref: '#/components/parameters/Scheduled'
-      - $ref: '#/components/parameters/FilterId'
-      - $ref: '#/components/parameters/FilterMessage'
-      - $ref: '#/components/parameters/FilterTitle'
-      - $ref: '#/components/parameters/FilterPriority'
-      - $ref: '#/components/parameters/FilterTags'
+        - name: topic
+          in: path
+          required: true
+          description: Topic name or comma-separated list of topics
+          schema:
+            type: string
+            pattern: ^[-_A-Za-z0-9]{1,64}(,[-_A-Za-z0-9]{1,64})*$
+        - $ref: '#/components/parameters/Poll'
+        - $ref: '#/components/parameters/Since'
+        - $ref: '#/components/parameters/Scheduled'
+        - $ref: '#/components/parameters/FilterId'
+        - $ref: '#/components/parameters/FilterMessage'
+        - $ref: '#/components/parameters/FilterTitle'
+        - $ref: '#/components/parameters/FilterPriority'
+        - $ref: '#/components/parameters/FilterTags'
       responses:
         '101':
           description: WebSocket connection established
@@ -439,45 +381,45 @@ paths:
   /{topic}/publish:
     get:
       tags:
-      - Publish
+        - Publish API
       summary: Publish message (GET alias)
       description: Alias for publishing a message via GET request. Message parameters
         must be passed via headers.
       operationId: publishMessageGet
       security:
-      - {}
-      - BasicAuth: []
-      - BearerAuth: []
+        - { }
+        - BasicAuth: [ ]
+        - BearerAuth: [ ]
       parameters:
-      - name: topic
-        in: path
-        required: true
-        description: Topic name
-        schema:
-          type: string
-          pattern: ^[-_A-Za-z0-9]{1,64}$
-      - $ref: '#/components/parameters/XTitle'
-      - $ref: '#/components/parameters/XPriority'
-      - $ref: '#/components/parameters/XTags'
-      - $ref: '#/components/parameters/XClick'
-      - $ref: '#/components/parameters/XIcon'
-      - $ref: '#/components/parameters/XAttach'
-      - $ref: '#/components/parameters/XFilename'
-      - $ref: '#/components/parameters/XActions'
-      - $ref: '#/components/parameters/XEmail'
-      - $ref: '#/components/parameters/XCall'
-      - $ref: '#/components/parameters/XDelay'
-      - $ref: '#/components/parameters/XCache'
-      - $ref: '#/components/parameters/XFirebase'
-      - $ref: '#/components/parameters/XMarkdown'
-      - $ref: '#/components/parameters/XTemplate'
-      - $ref: '#/components/parameters/XPollId'
-      - $ref: '#/components/parameters/XUnifiedPush'
-      - name: message
-        in: query
-        description: Message body (if not empty GET request)
-        schema:
-          type: string
+        - name: topic
+          in: path
+          required: true
+          description: Topic name
+          schema:
+            type: string
+            pattern: ^[-_A-Za-z0-9]{1,64}$
+        - $ref: '#/components/parameters/XTitle'
+        - $ref: '#/components/parameters/XPriority'
+        - $ref: '#/components/parameters/XTags'
+        - $ref: '#/components/parameters/XClick'
+        - $ref: '#/components/parameters/XIcon'
+        - $ref: '#/components/parameters/XAttach'
+        - $ref: '#/components/parameters/XFilename'
+        - $ref: '#/components/parameters/XActions'
+        - $ref: '#/components/parameters/XEmail'
+        - $ref: '#/components/parameters/XCall'
+        - $ref: '#/components/parameters/XDelay'
+        - $ref: '#/components/parameters/XCache'
+        - $ref: '#/components/parameters/XFirebase'
+        - $ref: '#/components/parameters/XMarkdown'
+        - $ref: '#/components/parameters/XTemplate'
+        - $ref: '#/components/parameters/XPollId'
+        - $ref: '#/components/parameters/XUnifiedPush'
+        - name: message
+          in: query
+          description: Message body (if not empty GET request)
+          schema:
+            type: string
       responses:
         '200':
           description: Message published successfully
@@ -494,44 +436,44 @@ paths:
   /{topic}/send:
     get:
       tags:
-      - Publish
+        - Publish API
       summary: Publish message (send alias)
       description: Alias for publishing a message via GET request
       operationId: publishMessageSend
       security:
-      - {}
-      - BasicAuth: []
-      - BearerAuth: []
+        - { }
+        - BasicAuth: [ ]
+        - BearerAuth: [ ]
       parameters:
-      - name: topic
-        in: path
-        required: true
-        description: Topic name
-        schema:
-          type: string
-          pattern: ^[-_A-Za-z0-9]{1,64}$
-      - $ref: '#/components/parameters/XTitle'
-      - $ref: '#/components/parameters/XPriority'
-      - $ref: '#/components/parameters/XTags'
-      - $ref: '#/components/parameters/XClick'
-      - $ref: '#/components/parameters/XIcon'
-      - $ref: '#/components/parameters/XAttach'
-      - $ref: '#/components/parameters/XFilename'
-      - $ref: '#/components/parameters/XActions'
-      - $ref: '#/components/parameters/XEmail'
-      - $ref: '#/components/parameters/XCall'
-      - $ref: '#/components/parameters/XDelay'
-      - $ref: '#/components/parameters/XCache'
-      - $ref: '#/components/parameters/XFirebase'
-      - $ref: '#/components/parameters/XMarkdown'
-      - $ref: '#/components/parameters/XTemplate'
-      - $ref: '#/components/parameters/XPollId'
-      - $ref: '#/components/parameters/XUnifiedPush'
-      - name: message
-        in: query
-        description: Message body
-        schema:
-          type: string
+        - name: topic
+          in: path
+          required: true
+          description: Topic name
+          schema:
+            type: string
+            pattern: ^[-_A-Za-z0-9]{1,64}$
+        - $ref: '#/components/parameters/XTitle'
+        - $ref: '#/components/parameters/XPriority'
+        - $ref: '#/components/parameters/XTags'
+        - $ref: '#/components/parameters/XClick'
+        - $ref: '#/components/parameters/XIcon'
+        - $ref: '#/components/parameters/XAttach'
+        - $ref: '#/components/parameters/XFilename'
+        - $ref: '#/components/parameters/XActions'
+        - $ref: '#/components/parameters/XEmail'
+        - $ref: '#/components/parameters/XCall'
+        - $ref: '#/components/parameters/XDelay'
+        - $ref: '#/components/parameters/XCache'
+        - $ref: '#/components/parameters/XFirebase'
+        - $ref: '#/components/parameters/XMarkdown'
+        - $ref: '#/components/parameters/XTemplate'
+        - $ref: '#/components/parameters/XPollId'
+        - $ref: '#/components/parameters/XUnifiedPush'
+        - name: message
+          in: query
+          description: Message body
+          schema:
+            type: string
       responses:
         '200':
           description: Message published successfully
@@ -548,44 +490,44 @@ paths:
   /{topic}/trigger:
     get:
       tags:
-      - Publish
+        - Publish API
       summary: Publish message (trigger alias)
       description: Alias for publishing a message via GET request
       operationId: publishMessageTrigger
       security:
-      - {}
-      - BasicAuth: []
-      - BearerAuth: []
+        - { }
+        - BasicAuth: [ ]
+        - BearerAuth: [ ]
       parameters:
-      - name: topic
-        in: path
-        required: true
-        description: Topic name
-        schema:
-          type: string
-          pattern: ^[-_A-Za-z0-9]{1,64}$
-      - $ref: '#/components/parameters/XTitle'
-      - $ref: '#/components/parameters/XPriority'
-      - $ref: '#/components/parameters/XTags'
-      - $ref: '#/components/parameters/XClick'
-      - $ref: '#/components/parameters/XIcon'
-      - $ref: '#/components/parameters/XAttach'
-      - $ref: '#/components/parameters/XFilename'
-      - $ref: '#/components/parameters/XActions'
-      - $ref: '#/components/parameters/XEmail'
-      - $ref: '#/components/parameters/XCall'
-      - $ref: '#/components/parameters/XDelay'
-      - $ref: '#/components/parameters/XCache'
-      - $ref: '#/components/parameters/XFirebase'
-      - $ref: '#/components/parameters/XMarkdown'
-      - $ref: '#/components/parameters/XTemplate'
-      - $ref: '#/components/parameters/XPollId'
-      - $ref: '#/components/parameters/XUnifiedPush'
-      - name: message
-        in: query
-        description: Message body
-        schema:
-          type: string
+        - name: topic
+          in: path
+          required: true
+          description: Topic name
+          schema:
+            type: string
+            pattern: ^[-_A-Za-z0-9]{1,64}$
+        - $ref: '#/components/parameters/XTitle'
+        - $ref: '#/components/parameters/XPriority'
+        - $ref: '#/components/parameters/XTags'
+        - $ref: '#/components/parameters/XClick'
+        - $ref: '#/components/parameters/XIcon'
+        - $ref: '#/components/parameters/XAttach'
+        - $ref: '#/components/parameters/XFilename'
+        - $ref: '#/components/parameters/XActions'
+        - $ref: '#/components/parameters/XEmail'
+        - $ref: '#/components/parameters/XCall'
+        - $ref: '#/components/parameters/XDelay'
+        - $ref: '#/components/parameters/XCache'
+        - $ref: '#/components/parameters/XFirebase'
+        - $ref: '#/components/parameters/XMarkdown'
+        - $ref: '#/components/parameters/XTemplate'
+        - $ref: '#/components/parameters/XPollId'
+        - $ref: '#/components/parameters/XUnifiedPush'
+        - name: message
+          in: query
+          description: Message body
+          schema:
+            type: string
       responses:
         '200':
           description: Message published successfully
@@ -602,21 +544,21 @@ paths:
   /{topic}/auth:
     get:
       tags:
-      - Subscribe
+        - Subscribe API
       summary: Check topic authentication
       description: Check if the client is authenticated to access the topic
       operationId: checkTopicAuth
       security:
-      - BasicAuth: []
-      - BearerAuth: []
+        - BasicAuth: [ ]
+        - BearerAuth: [ ]
       parameters:
-      - name: topic
-        in: path
-        required: true
-        description: Topic name or comma-separated list of topics
-        schema:
-          type: string
-          pattern: ^[-_A-Za-z0-9]{1,64}(,[-_A-Za-z0-9]{1,64})*$
+        - name: topic
+          in: path
+          required: true
+          description: Topic name or comma-separated list of topics
+          schema:
+            type: string
+            pattern: ^[-_A-Za-z0-9]{1,64}(,[-_A-Za-z0-9]{1,64})*$
       responses:
         '200':
           description: Authentication successful
@@ -634,11 +576,11 @@ paths:
   /v1/health:
     get:
       tags:
-      - Admin - **EXPERIMENTAL**
+        - Admin API (Internal)
       summary: Health check
       description: Returns server health status
       operationId: healthCheck
-      security: []
+      security: [ ]
       responses:
         '200':
           description: Server is healthy
@@ -652,11 +594,11 @@ paths:
   /v1/stats:
     get:
       tags:
-      - Admin - **EXPERIMENTAL**
+        - Admin API (Internal)
       summary: Server statistics
       description: Returns public server statistics
       operationId: getStats
-      security: []
+      security: [ ]
       responses:
         '200':
           description: Statistics retrieved successfully
@@ -675,13 +617,13 @@ paths:
   /v1/tiers:
     get:
       tags:
-      - Account - **EXPERIMENTAL**
+        - Account API (Internal)
       summary: List available tiers
       description: Returns list of available subscription tiers with pricing
       operationId: getTiers
       security:
-      - {}
-      - BearerAuth: []
+        - { }
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Tiers retrieved successfully
@@ -710,12 +652,12 @@ paths:
   /v1/users:
     get:
       tags:
-      - Admin - **EXPERIMENTAL**
+        - Admin API (Internal)
       summary: List users
       description: Returns list of all users (admin only)
       operationId: listUsers
       security:
-      - AdminAuth: []
+        - AdminAuth: [ ]
       responses:
         '200':
           description: Users retrieved successfully
@@ -731,12 +673,12 @@ paths:
           $ref: '#/components/responses/Forbidden'
     post:
       tags:
-      - Admin - **EXPERIMENTAL**
+        - Admin API (Internal)
       summary: Create user
       description: Creates a new user (admin only)
       operationId: createUser
       security:
-      - AdminAuth: []
+        - AdminAuth: [ ]
       requestBody:
         required: true
         content:
@@ -744,7 +686,7 @@ paths:
             schema:
               type: object
               required:
-              - username
+                - username
               properties:
                 username:
                   type: string
@@ -756,8 +698,8 @@ paths:
                 role:
                   type: string
                   enum:
-                  - user
-                  - admin
+                    - user
+                    - admin
                   default: user
       responses:
         '200':
@@ -774,12 +716,12 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     put:
       tags:
-      - Admin - **EXPERIMENTAL**  
+        - Admin API (Internal)
       summary: Update user
       description: Updates an existing user (admin only)
       operationId: updateUser
       security:
-      - AdminAuth: []
+        - AdminAuth: [ ]
       requestBody:
         required: true
         content:
@@ -787,7 +729,7 @@ paths:
             schema:
               type: object
               required:
-              - username
+                - username
               properties:
                 username:
                   type: string
@@ -811,12 +753,12 @@ paths:
           $ref: '#/components/responses/NotFound'
     delete:
       tags:
-      - Admin - **EXPERIMENTAL**  
+        - Admin API (Internal)
       summary: Delete user
       description: Deletes a user (admin only)
       operationId: deleteUser
       security:
-      - AdminAuth: []
+        - AdminAuth: [ ]
       requestBody:
         required: true
         content:
@@ -824,7 +766,7 @@ paths:
             schema:
               type: object
               required:
-              - username
+                - username
               properties:
                 username:
                   type: string
@@ -840,12 +782,12 @@ paths:
   /v1/users/access:
     put:
       tags:
-      - Admin - **EXPERIMENTAL**    
+        - Admin API (Internal)
       summary: Grant user access to topic
       description: Grants a user access to a topic or topic pattern (admin only)
       operationId: grantAccess
       security:
-      - AdminAuth: []
+        - AdminAuth: [ ]
       requestBody:
         required: true
         content:
@@ -853,9 +795,9 @@ paths:
             schema:
               type: object
               required:
-              - username
-              - topic
-              - permission
+                - username
+                - topic
+                - permission
               properties:
                 username:
                   type: string
@@ -865,9 +807,9 @@ paths:
                 permission:
                   type: string
                   enum:
-                  - read
-                  - write
-                  - readwrite
+                    - read
+                    - write
+                    - readwrite
       responses:
         '200':
           description: Access granted successfully
@@ -879,12 +821,12 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     delete:
       tags:
-      - Admin - **EXPERIMENTAL**
+        - Admin API (Internal)
       summary: Reset user access to topic
       description: Resets user access to a topic (admin only)
       operationId: resetAccess
       security:
-      - AdminAuth: []
+        - AdminAuth: [ ]
       requestBody:
         required: true
         content:
@@ -892,8 +834,8 @@ paths:
             schema:
               type: object
               required:
-              - username
-              - topic
+                - username
+                - topic
               properties:
                 username:
                   type: string
@@ -909,11 +851,11 @@ paths:
   /v1/account:
     post:
       tags:
-      - Account - **EXPERIMENTAL**
+        - Account API (Internal)
       summary: Create account
       description: Creates a new user account
       operationId: createAccount
-      security: []
+      security: [ ]
       requestBody:
         required: true
         content:
@@ -921,8 +863,8 @@ paths:
             schema:
               type: object
               required:
-              - username
-              - password
+                - username
+                - password
               properties:
                 username:
                   type: string
@@ -944,13 +886,13 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     get:
       tags:
-      - Account - **EXPERIMENTAL**
+        - Account API (Internal)
       summary: Get account info
       description: Returns information about the authenticated user's account
       operationId: getAccount
       security:
-      - BearerAuth: []
-      - BasicAuth: []
+        - BearerAuth: [ ]
+        - BasicAuth: [ ]
       responses:
         '200':
           description: Account info retrieved successfully
@@ -962,13 +904,13 @@ paths:
           $ref: '#/components/responses/Unauthorized'
     delete:
       tags:
-      - Account - **EXPERIMENTAL**
+        - Account API (Internal)
       summary: Delete account
       description: Deletes the authenticated user's account
       operationId: deleteAccount
       security:
-      - BearerAuth: []
-      - BasicAuth: []
+        - BearerAuth: [ ]
+        - BasicAuth: [ ]
       requestBody:
         required: true
         content:
@@ -976,7 +918,7 @@ paths:
             schema:
               type: object
               required:
-              - password
+                - password
               properties:
                 password:
                   type: string
@@ -991,13 +933,13 @@ paths:
   /v1/account/password:
     post:
       tags:
-      - Account - **EXPERIMENTAL**
+        - Account API (Internal)
       summary: Change password
       description: Changes the authenticated user's password
       operationId: changePassword
       security:
-      - BearerAuth: []
-      - BasicAuth: []
+        - BearerAuth: [ ]
+        - BasicAuth: [ ]
       requestBody:
         required: true
         content:
@@ -1005,8 +947,8 @@ paths:
             schema:
               type: object
               required:
-              - password
-              - new_password
+                - password
+                - new_password
               properties:
                 password:
                   type: string
@@ -1026,13 +968,13 @@ paths:
   /v1/account/token:
     post:
       tags:
-      - Account - **EXPERIMENTAL**
+        - Account API (Internal)
       summary: Create access token
       description: Creates a new API access token for the authenticated user
       operationId: createToken
       security:
-      - BearerAuth: []
-      - BasicAuth: []
+        - BearerAuth: [ ]
+        - BasicAuth: [ ]
       requestBody:
         content:
           application/json:
@@ -1058,13 +1000,13 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     patch:
       tags:
-      - Account - **EXPERIMENTAL**
+        - Account API (Internal)
       summary: Update access token
       description: Updates an existing access token
       operationId: updateToken
       security:
-      - BearerAuth: []
-      - BasicAuth: []
+        - BearerAuth: [ ]
+        - BasicAuth: [ ]
       requestBody:
         required: true
         content:
@@ -1072,7 +1014,7 @@ paths:
             schema:
               type: object
               required:
-              - token
+                - token
               properties:
                 token:
                   type: string
@@ -1095,13 +1037,13 @@ paths:
           $ref: '#/components/responses/NotFound'
     delete:
       tags:
-      - Account - **EXPERIMENTAL**
+        - Account API (Internal)
       summary: Delete access token
       description: Deletes an access token
       operationId: deleteToken
       security:
-      - BearerAuth: []
-      - BasicAuth: []
+        - BearerAuth: [ ]
+        - BasicAuth: [ ]
       requestBody:
         required: true
         content:
@@ -1109,7 +1051,7 @@ paths:
             schema:
               type: object
               required:
-              - token
+                - token
               properties:
                 token:
                   type: string
@@ -1123,13 +1065,13 @@ paths:
   /v1/account/settings:
     patch:
       tags:
-      - Account - **EXPERIMENTAL**  
+        - Account API (Internal)
       summary: Update account settings
       description: Updates the authenticated user's account settings
       operationId: updateSettings
       security:
-      - BearerAuth: []
-      - BasicAuth: []
+        - BearerAuth: [ ]
+        - BasicAuth: [ ]
       requestBody:
         content:
           application/json:
@@ -1158,13 +1100,13 @@ paths:
   /v1/account/subscription:
     post:
       tags:
-      - Account - **EXPERIMENTAL**  
+        - Account API (Internal)
       summary: Add topic subscription
       description: Subscribes to a topic
       operationId: addSubscription
       security:
-      - BearerAuth: []
-      - BasicAuth: []
+        - BearerAuth: [ ]
+        - BasicAuth: [ ]
       requestBody:
         required: true
         content:
@@ -1172,7 +1114,7 @@ paths:
             schema:
               type: object
               required:
-              - topic
+                - topic
               properties:
                 topic:
                   type: string
@@ -1187,13 +1129,13 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     patch:
       tags:
-      - Account - **EXPERIMENTAL**  
+        - Account API (Internal)
       summary: Update topic subscription
       description: Updates a topic subscription
       operationId: updateSubscription
       security:
-      - BearerAuth: []
-      - BasicAuth: []
+        - BearerAuth: [ ]
+        - BasicAuth: [ ]
       requestBody:
         required: true
         content:
@@ -1201,7 +1143,7 @@ paths:
             schema:
               type: object
               required:
-              - topic
+                - topic
               properties:
                 topic:
                   type: string
@@ -1216,13 +1158,13 @@ paths:
           $ref: '#/components/responses/NotFound'
     delete:
       tags:
-      - Account - **EXPERIMENTAL**  
+        - Account API (Internal)
       summary: Delete topic subscription
       description: Unsubscribes from a topic
       operationId: deleteSubscription
       security:
-      - BearerAuth: []
-      - BasicAuth: []
+        - BearerAuth: [ ]
+        - BasicAuth: [ ]
       requestBody:
         required: true
         content:
@@ -1230,7 +1172,7 @@ paths:
             schema:
               type: object
               required:
-              - topic
+                - topic
               properties:
                 topic:
                   type: string
@@ -1244,13 +1186,13 @@ paths:
   /v1/account/reservation:
     post:
       tags:
-      - Account - **EXPERIMENTAL**    
+        - Account API (Internal)
       summary: Reserve topic
       description: Reserves a topic for exclusive use
       operationId: reserveTopic
       security:
-      - BearerAuth: []
-      - BasicAuth: []
+        - BearerAuth: [ ]
+        - BasicAuth: [ ]
       requestBody:
         required: true
         content:
@@ -1258,7 +1200,7 @@ paths:
             schema:
               type: object
               required:
-              - topic
+                - topic
               properties:
                 topic:
                   type: string
@@ -1266,9 +1208,9 @@ paths:
                 everyone:
                   type: string
                   enum:
-                  - read-write
-                  - read-only
-                  - deny
+                    - read-write
+                    - read-only
+                    - deny
                   default: deny
                   description: Access level for other users
       responses:
@@ -1283,21 +1225,21 @@ paths:
   /v1/account/reservation/{topic}:
     delete:
       tags:
-      - Account - **EXPERIMENTAL**    
+        - Account API (Internal)
       summary: Delete topic reservation
       description: Removes a topic reservation
       operationId: deleteReservation
       security:
-      - BearerAuth: []
-      - BasicAuth: []
+        - BearerAuth: [ ]
+        - BasicAuth: [ ]
       parameters:
-      - name: topic
-        in: path
-        required: true
-        description: Topic name
-        schema:
-          type: string
-          pattern: ^[-_A-Za-z0-9]{1,64}$
+        - name: topic
+          in: path
+          required: true
+          description: Topic name
+          schema:
+            type: string
+            pattern: ^[-_A-Za-z0-9]{1,64}$
       responses:
         '200':
           description: Reservation deleted successfully
@@ -1308,13 +1250,13 @@ paths:
   /v1/account/phone:
     put:
       tags:
-      - Account - **EXPERIMENTAL**    
+        - Account API (Internal)
       summary: Add phone number
       description: Adds and verifies a phone number for voice call notifications
       operationId: addPhoneNumber
       security:
-      - BearerAuth: []
-      - BasicAuth: []
+        - BearerAuth: [ ]
+        - BasicAuth: [ ]
       requestBody:
         required: true
         content:
@@ -1322,8 +1264,8 @@ paths:
             schema:
               type: object
               required:
-              - number
-              - code
+                - number
+                - code
               properties:
                 number:
                   type: string
@@ -1340,13 +1282,13 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     delete:
       tags:
-      - Account - **EXPERIMENTAL**    
+        - Account API (Internal)
       summary: Delete phone number
       description: Removes a phone number
       operationId: deletePhoneNumber
       security:
-      - BearerAuth: []
-      - BasicAuth: []
+        - BearerAuth: [ ]
+        - BasicAuth: [ ]
       requestBody:
         required: true
         content:
@@ -1354,7 +1296,7 @@ paths:
             schema:
               type: object
               required:
-              - number
+                - number
               properties:
                 number:
                   type: string
@@ -1369,13 +1311,13 @@ paths:
   /v1/account/phone/verify:
     put:
       tags:
-      - Account - **EXPERIMENTAL**      
+        - Account API (Internal)
       summary: Request phone verification code
       description: Requests a verification code via SMS
       operationId: verifyPhoneNumber
       security:
-      - BearerAuth: []
-      - BasicAuth: []
+        - BearerAuth: [ ]
+        - BasicAuth: [ ]
       requestBody:
         required: true
         content:
@@ -1383,8 +1325,8 @@ paths:
             schema:
               type: object
               required:
-              - number
-              - channel
+                - number
+                - channel
               properties:
                 number:
                   type: string
@@ -1392,8 +1334,8 @@ paths:
                 channel:
                   type: string
                   enum:
-                  - sms
-                  - call
+                    - sms
+                    - call
       responses:
         '200':
           description: Verification code sent successfully
@@ -1401,39 +1343,16 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '429':
           $ref: '#/components/responses/TooManyRequests'
-  /v1/account/billing/portal:
-    post:
-      tags:
-      - Account - **EXPERIMENTAL**      
-      summary: Create billing portal session
-      description: Creates a Stripe billing portal session
-      operationId: createBillingPortal
-      security:
-      - BearerAuth: []
-      - BasicAuth: []
-      responses:
-        '200':
-          description: Portal session created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  redirect_url:
-                    type: string
-                    format: uri
-        '401':
-          $ref: '#/components/responses/Unauthorized'
   /v1/account/billing/subscription:
     post:
       tags:
-      - Account - **EXPERIMENTAL**      
+        - Account API (Internal)
       summary: Create subscription
       description: Creates a paid subscription via Stripe checkout
       operationId: createSubscription
       security:
-      - BearerAuth: []
-      - BasicAuth: []
+        - BearerAuth: [ ]
+        - BasicAuth: [ ]
       requestBody:
         content:
           application/json:
@@ -1445,8 +1364,8 @@ paths:
                 interval:
                   type: string
                   enum:
-                  - month
-                  - year
+                    - month
+                    - year
       responses:
         '200':
           description: Checkout session created
@@ -1462,13 +1381,13 @@ paths:
           $ref: '#/components/responses/Unauthorized'
     put:
       tags:
-      - Account - **EXPERIMENTAL**      
+        - Account API (Internal)
       summary: Update subscription
       description: Modifies an existing subscription
       operationId: updateSubscription
       security:
-      - BearerAuth: []
-      - BasicAuth: []
+        - BearerAuth: [ ]
+        - BasicAuth: [ ]
       requestBody:
         content:
           application/json:
@@ -1480,8 +1399,8 @@ paths:
                 interval:
                   type: string
                   enum:
-                  - month
-                  - year
+                    - month
+                    - year
       responses:
         '200':
           description: Subscription updated successfully
@@ -1489,139 +1408,26 @@ paths:
           $ref: '#/components/responses/Unauthorized'
     delete:
       tags:
-      - Account - **EXPERIMENTAL**      
+        - Account API (Internal)
       summary: Cancel subscription
       description: Cancels the paid subscription
       operationId: cancelSubscription
       security:
-      - BearerAuth: []
-      - BasicAuth: []
+        - BearerAuth: [ ]
+        - BasicAuth: [ ]
       responses:
         '200':
           description: Subscription cancelled successfully
         '401':
           $ref: '#/components/responses/Unauthorized'
-  /v1/account/billing/subscription/success/{CHECKOUT_SESSION_ID}:
-    get:
-      tags:
-      - Account - **EXPERIMENTAL**        
-      summary: Subscription checkout success
-      description: Handles successful Stripe checkout redirect
-      operationId: subscriptionCheckoutSuccess
-      security:
-      - BearerAuth: []
-      - BasicAuth: []
-      parameters:
-      - name: CHECKOUT_SESSION_ID
-        in: path
-        required: true
-        description: Stripe checkout session ID
-        schema:
-          type: string
-      responses:
-        '200':
-          description: Checkout processed successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /v1/account/billing/webhook:
-    post:
-      tags:
-      - Account - **EXPERIMENTAL**        
-      summary: Stripe webhook handler
-      description: Handles incoming webhooks from Stripe
-      operationId: stripeWebhook
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        '200':
-          description: Webhook processed successfully
-  /v1/webpush:
-    post:
-      tags:
-      - WebPush
-      summary: Register Web Push subscription
-      description: Registers a Web Push subscription for browser notifications
-      operationId: registerWebPush
-      security:
-      - BearerAuth: []
-      - BasicAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-              - endpoint
-              - auth
-              - p256dh
-              - topics
-              properties:
-                endpoint:
-                  type: string
-                  format: uri
-                  description: Push service endpoint URL
-                auth:
-                  type: string
-                  description: Authentication secret
-                p256dh:
-                  type: string
-                  description: P-256 ECDH key
-                topics:
-                  type: array
-                  items:
-                    type: string
-                  description: List of topics to subscribe to
-      responses:
-        '200':
-          description: Subscription registered successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-    delete:
-      tags:
-      - WebPush
-      summary: Delete Web Push subscription
-      description: Removes a Web Push subscription
-      operationId: deleteWebPush
-      security:
-      - BearerAuth: []
-      - BasicAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-              - endpoint
-              properties:
-                endpoint:
-                  type: string
-                  format: uri
-      responses:
-        '200':
-          description: Subscription deleted successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
   /_matrix/push/v1/notify:
     get:
       tags:
-      - Matrix
+        - Matrix
       summary: Matrix push gateway discovery
       description: Returns Matrix push gateway information
       operationId: matrixDiscovery
-      security: []
+      security: [ ]
       responses:
         '200':
           description: Gateway info
@@ -1631,11 +1437,11 @@ paths:
                 type: object
     post:
       tags:
-      - Matrix
+        - Matrix
       summary: Matrix push notification
       description: Receives push notifications from Matrix homeserver
       operationId: matrixPush
-      security: []
+      security: [ ]
       requestBody:
         required: true
         content:
@@ -1670,64 +1476,14 @@ paths:
                     items:
                       type: string
                     description: List of rejected pushkeys
-  /file/{messageId}:
-    get:
-      tags:
-      - Publish
-      summary: Download attachment
-      description: Downloads a file attachment by message ID
-      operationId: downloadAttachment
-      security: []
-      parameters:
-      - name: messageId
-        in: path
-        required: true
-        description: Message ID
-        schema:
-          type: string
-          pattern: ^[-_A-Za-z0-9]{12}$
-      responses:
-        '200':
-          description: File content
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-          image/*:
-            schema:
-              type: string
-              format: binary
-        '404':
-          $ref: '#/components/responses/NotFound'
-    head:
-      tags:
-      - Publish
-      summary: Check attachment exists
-      description: Checks if an attachment exists without downloading it
-      operationId: headAttachment
-      security: []
-      parameters:
-      - name: messageId
-        in: path
-        required: true
-        description: Message ID
-        schema:
-          type: string
-          pattern: ^[-_A-Za-z0-9]{12}$
-      responses:
-        '200':
-          description: Attachment exists
-        '404':
-          $ref: '#/components/responses/NotFound'
   /metrics:
     get:
       tags:
-      - Admin - **EXPERIMENTAL**
+        - Admin API (Internal)
       summary: Prometheus metrics
       description: Returns Prometheus-compatible metrics
       operationId: getMetrics
-      security: []
+      security: [ ]
       responses:
         '200':
           description: Metrics in Prometheus format
@@ -1735,61 +1491,21 @@ paths:
             text/plain:
               schema:
                 type: string
-  /:
+  /v1/config:
     get:
       tags:
-      - Subscribe
-      summary: Web app root
-      description: Returns the web application
-      operationId: getRoot
-      security: []
+        - Admin API (Internal)
+      summary: Server configuration
+      description: Returns the server configuration as JSON. Used by the web app to determine enabled features.
+      operationId: getServerConfig
+      security: [ ]
       responses:
         '200':
-          description: Web app HTML
+          description: Server configuration
           content:
-            text/html:
+            application/json:
               schema:
-                type: string
-    head:
-      tags:
-      - Subscribe
-      summary: Server check
-      description: Returns empty response to verify server is running
-      operationId: headRoot
-      security: []
-      responses:
-        '200':
-          description: Server is running
-  /config.js:
-    get:
-      tags:
-      - Subscribe
-      summary: Web app configuration
-      description: Returns JavaScript configuration for the web app
-      operationId: getConfig
-      security: []
-      responses:
-        '200':
-          description: Configuration JavaScript
-          content:
-            text/javascript:
-              schema:
-                type: string
-  /manifest.webmanifest:
-    get:
-      tags:
-      - Subscribe
-      summary: Web app manifest
-      description: Returns the Progressive Web App manifest
-      operationId: getManifest
-      security: []
-      responses:
-        '200':
-          description: Web app manifest
-          content:
-            application/manifest+json:
-              schema:
-                type: object
+                $ref: '#/components/schemas/ServerConfig'
 components:
   securitySchemes:
     BasicAuth:
@@ -1834,11 +1550,11 @@ components:
       schema:
         type: integer
         enum:
-        - 3
-        - 2
-        - 1
-        - 4
-        - 5
+          - 3
+          - 2
+          - 1
+          - 4
+          - 5
         min:
           value: 1
         urgent:
@@ -1936,10 +1652,10 @@ components:
       schema:
         type: string
         enum:
-        - true
-        - false
-        - 1
-        - 0
+          - true
+          - false
+          - 1
+          - 0
     XFirebase:
       name: X-Firebase
       in: header
@@ -1947,10 +1663,10 @@ components:
       schema:
         type: string
         enum:
-        - true
-        - false
-        - 1
-        - 0
+          - true
+          - false
+          - 1
+          - 0
     XMarkdown:
       name: X-Markdown
       in: header
@@ -1958,10 +1674,10 @@ components:
       schema:
         type: string
         enum:
-        - true
-        - false
-        - 1
-        - 0
+          - true
+          - false
+          - 1
+          - 0
     XTemplate:
       name: X-Template
       in: header
@@ -1991,11 +1707,11 @@ components:
       schema:
         type: string
         enum:
-        - false
-        - true
-        - 1
-        - 0
-        - up
+          - false
+          - true
+          - 1
+          - 0
+          - up
     Poll:
       name: poll
       in: query
@@ -2024,9 +1740,9 @@ components:
       schema:
         type: string
         enum:
-        - all
-        - latest
-        - none
+          - all
+          - latest
+          - none
         default: none
     Scheduled:
       name: scheduled
@@ -2112,14 +1828,62 @@ components:
             error_code: 42901
             message: Rate limit exceeded. Please try again later.
   schemas:
+    ServerConfig:
+      type: object
+      description: Server configuration
+      properties:
+        base_url:
+          type: string
+          description: Base URL of the server (empty means use window.location.origin)
+        app_root:
+          type: string
+          description: Web app root path
+        enable_login:
+          type: boolean
+          description: Whether login is enabled
+        require_login:
+          type: boolean
+          description: Whether login is required to use the server
+        enable_signup:
+          type: boolean
+          description: Whether user signup is enabled
+        enable_payments:
+          type: boolean
+          description: Whether Stripe payments are enabled
+        enable_calls:
+          type: boolean
+          description: Whether phone calls are enabled (Twilio)
+        enable_emails:
+          type: boolean
+          description: Whether email forwarding is enabled
+        enable_reservations:
+          type: boolean
+          description: Whether topic reservations are enabled
+        enable_web_push:
+          type: boolean
+          description: Whether Web Push notifications are enabled
+        billing_contact:
+          type: string
+          description: Billing contact email
+        web_push_public_key:
+          type: string
+          description: VAPID public key for Web Push
+        disallowed_topics:
+          type: array
+          items:
+            type: string
+          description: List of disallowed topic names
+        config_hash:
+          type: string
+          description: Hash of the current configuration (for change detection)
     Message:
       type: object
       description: A notification message
       required:
-      - id
-      - time
-      - event
-      - topic
+        - id
+        - time
+        - event
+        - topic
       properties:
         id:
           type: string
@@ -2135,10 +1899,10 @@ components:
         event:
           type: string
           enum:
-          - open
-          - keepalive
-          - message
-          - poll_request
+            - open
+            - keepalive
+            - message
+            - poll_request
           description: Message event type
         topic:
           type: string
@@ -2187,9 +1951,9 @@ components:
       type: object
       description: An action button
       required:
-      - id
-      - action
-      - label
+        - id
+        - action
+        - label
       properties:
         id:
           type: string
@@ -2197,9 +1961,9 @@ components:
         action:
           type: string
           enum:
-          - view
-          - http
-          - broadcast
+            - view
+            - http
+            - broadcast
           description: Action type
         label:
           type: string
@@ -2235,8 +1999,8 @@ components:
       type: object
       description: A file attachment
       required:
-      - name
-      - url
+        - name
+        - url
       properties:
         name:
           type: string
@@ -2260,7 +2024,7 @@ components:
       type: object
       description: Message for JSON publishing
       required:
-      - topic
+        - topic
       properties:
         topic:
           type: string
@@ -2324,9 +2088,9 @@ components:
       type: object
       description: Error response
       required:
-      - error
-      - error_code
-      - message
+        - error
+        - error_code
+        - message
       properties:
         error:
           type: string
@@ -2341,7 +2105,7 @@ components:
       type: object
       description: User account information
       required:
-      - username
+        - username
       properties:
         username:
           type: string
@@ -2349,8 +2113,8 @@ components:
         role:
           type: string
           enum:
-          - user
-          - admin
+            - user
+            - admin
           description: User role
         sync_topic:
           type: string
@@ -2401,8 +2165,8 @@ components:
         basis:
           type: string
           enum:
-          - ip
-          - tier
+            - ip
+            - tier
           description: Limit basis
         messages:
           type: integer
@@ -2504,15 +2268,15 @@ components:
         everyone:
           type: string
           enum:
-          - read-write
-          - read-only
-          - deny
+            - read-write
+            - read-only
+            - deny
           description: Access for other users
     Token:
       type: object
       description: API access token
       required:
-      - token
+        - token
       properties:
         token:
           type: string
@@ -2550,8 +2314,8 @@ components:
         interval:
           type: string
           enum:
-          - month
-          - year
+            - month
+            - year
           description: Billing interval
         paid_until:
           type: integer
@@ -2565,8 +2329,8 @@ components:
       type: object
       description: User information (admin view)
       required:
-      - username
-      - role
+        - username
+        - role
       properties:
         username:
           type: string
@@ -2574,8 +2338,8 @@ components:
         role:
           type: string
           enum:
-          - user
-          - admin
+            - user
+            - admin
           description: User role
         tier:
           type: string
@@ -2591,7 +2355,7 @@ components:
               permission:
                 type: string
                 enum:
-                - read
-                - write
-                - readwrite
+                  - read
+                  - write
+                  - readwrite
                 description: Permission level
