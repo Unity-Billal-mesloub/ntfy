@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ntfy API Reference</title>
+    <link rel="icon" type="image/svg+xml" href="https://ntfy.sh/static/img/favicon.svg">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #ffffff;
+        }
+
+        /* Header matching docs.ntfy.sh */
+        .header {
+            background: linear-gradient(to right, #317f6f, #14b8a6);
+            padding: 16px 20px;
+            color: white;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            justify-content: space-between;
+        }
+
+        .header-text {
+            flex: 1;
+        }
+
+        .header-text h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+            color: white;
+            line-height: 1.2;
+        }
+
+        .header-text p {
+            font-size: 13px;
+            margin: 2px 0 0 0;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .header-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .header-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0.9;
+            transition: opacity 0.2s;
+        }
+
+        .header-links a:hover {
+            opacity: 1;
+        }
+
+        /* Proxy toggle checkbox */
+        .proxy-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 20px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .proxy-toggle:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .proxy-toggle input[type="checkbox"] {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+        }
+
+        .proxy-toggle label {
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* Scalar container */
+        #scalar-api-reference {
+            width: 100%;
+            min-height: calc(100vh - 100px);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            .header-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <a href="/" style="display: flex; align-items: center; text-decoration: none;">
+                <img src="https://docs.ntfy.sh/static/img/ntfy.png" width="35" height="35" alt="ntfy logo" style="margin-right: 10px;">
+            </a>
+            <div class="header-text">
+                <h1>ntfy</h1>
+                <p>API Reference</p>
+            </div>
+            <div class="header-links">
+                <a href="/">Documentation Home</a>
+                <a href="https://ntfy.sh">ntfy.sh</a>
+                <a href="https://github.com/binwiederhier/ntfy">GitHub</a>
+                <div class="proxy-toggle" title="Enable CORS proxy to make requests through Scalar's proxy server">
+                    <input type="checkbox" id="proxy-toggle-checkbox" checked>
+                    <label for="proxy-toggle-checkbox">Use CORS Proxy</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Scalar API Reference -->
+    <div id="scalar-api-reference"></div>
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.43.8/dist/browser/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.43.8/dist/browser/standalone.js"></script>
+
+    <script>
+        // Store the Scalar instance globally so we can reinitialize it
+        let scalarInstance = null;
+        
+        // Get proxy preference from localStorage (default: true)
+        function getProxyEnabled() {
+            const stored = localStorage.getItem('scalar-proxy-enabled');
+            return stored === null ? true : stored === 'true';
+        }
+        
+        // Save proxy preference to localStorage
+        function setProxyEnabled(enabled) {
+            localStorage.setItem('scalar-proxy-enabled', enabled.toString());
+        }
+        
+        // Initialize checkbox state
+        function initProxyCheckbox() {
+            const checkbox = document.getElementById('proxy-toggle-checkbox');
+            if (checkbox) {
+                checkbox.checked = getProxyEnabled();
+                
+                // Add change listener
+                checkbox.addEventListener('change', function() {
+                    const enabled = checkbox.checked;
+                    setProxyEnabled(enabled);
+                    // Reinitialize Scalar with new proxy setting
+                    reinitializeScalar();
+                });
+            }
+        }
+        
+        // Reinitialize Scalar with current proxy setting
+        function reinitializeScalar() {
+            const targetElement = document.getElementById('scalar-api-reference');
+            if (targetElement) {
+                // Clear the container
+                targetElement.innerHTML = '<div style="padding: 20px; text-align: center; color: #6b7280;">Reinitializing API Reference...</div>';
+                // Reinitialize
+                setTimeout(initScalar, 100);
+            }
+        }
+        
+        function initScalar() {
+            const targetElement = document.getElementById('scalar-api-reference');
+            
+            if (!targetElement) {
+                setTimeout(initScalar, 50);
+                return;
+            }
+            
+            if (typeof Scalar === 'undefined' || typeof Scalar.createApiReference !== 'function') {
+                setTimeout(initScalar, 50);
+                return;
+            }
+            
+            // Get proxy setting
+            const useProxy = getProxyEnabled();
+            
+            // Build config object
+            const config = {
+                url: './openapi.yaml',
+                layout: 'modern',
+                theme: 'default',
+                configuration: {
+                    hideSidebar: false,
+                    hideSearch: false,
+                    hideModels: false,
+                    hideDownloadButton: false,
+                    hideTabs: false,
+                    hideServerUrl: false,
+                    hideInfo: false,
+                    darkMode: false,
+                    withDefaultFonts: false,
+                },
+                };
+            
+            // Only add proxyUrl if enabled
+            if (useProxy) {
+                config.proxyUrl = 'https://proxy.scalar.com';
+            }
+            
+            try {
+                const apiRef = Scalar.createApiReference('#scalar-api-reference', config);
+                console.log('Scalar initialized successfully', useProxy ? 'with proxy' : 'without proxy');
+            } catch (error) {
+                console.error('Error initializing Scalar:', error);
+                targetElement.innerHTML = '<div style="padding: 20px; color: red;">Error loading API reference: ' + error.message + '</div>';
+            }
+        }
+        
+        // Initialize checkbox first
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                initProxyCheckbox();
+                initScalar();
+            });
+        } else {
+            initProxyCheckbox();
+            setTimeout(initScalar, 100);
+        }
+        
+        // Also try on window load as fallback
+        window.addEventListener('load', function() {
+            initProxyCheckbox();
+            setTimeout(initScalar, 200);
+        });
+    </script>
+</body>
+</html>
