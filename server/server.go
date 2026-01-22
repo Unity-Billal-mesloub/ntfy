@@ -2140,6 +2140,24 @@ func (s *Server) maybeAuthenticate(r *http.Request) (*visitor, error) {
 	if s.userManager == nil {
 		return vip, nil
 	}
+	// Check for proxy-forwarded user header (requires behind-proxy and auth-user-header to be set)
+	if s.config.BehindProxy && s.config.AuthUserHeader != "" {
+		if username := strings.TrimSpace(r.Header.Get(s.config.AuthUserHeader)); username != "" {
+			u, err := s.userManager.User(username)
+			if err != nil {
+				logr(r).Err(err).Debug("User from auth-user-header not found")
+				return vip, errHTTPUnauthorized
+			}
+			if u.Deleted {
+				logr(r).Debug("User from auth-user-header is deleted")
+				return vip, errHTTPUnauthorized
+			}
+			logr(r).Debug("User from header found")
+			return s.visitor(ip, u), nil
+		}
+		// If auth-user-header is set, but no user was provided, return unauthorized
+		return vip, errHTTPUnauthorized
+	}
 	header, err := readAuthHeader(r)
 	if err != nil {
 		return vip, err
