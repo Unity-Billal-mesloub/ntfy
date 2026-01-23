@@ -140,7 +140,7 @@ const ProfileIcon = () => {
 
   const handleLogout = async () => {
     // For proxy auth, redirect to the logout URL if configured
-    if (config.auth_mode === "proxy") {
+    if (config.auth_user) {
       if (config.auth_logout_url) {
         await db().delete();
         localStorage.removeItem("user");
@@ -158,8 +158,8 @@ const ProfileIcon = () => {
     }
   };
 
-  // Determine if logout button should be shown
-  const showLogout = config.auth_mode !== "proxy" || config.auth_logout_url;
+  // Determine if logout button should be shown (hide if proxy auth without logout URL)
+  const showLogout = !config.auth_user || config.auth_logout_url;
 
   return (
     <>

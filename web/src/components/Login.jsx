@@ -20,7 +20,7 @@ const Login = () => {
 
   // Redirect to app if using proxy authentication
   useEffect(() => {
-    if (config.auth_mode === "proxy") {
+    if (config.auth_user) {
       window.location.href = routes.app;
     }
   }, []);

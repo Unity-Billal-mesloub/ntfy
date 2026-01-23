@@ -343,9 +343,9 @@ class AccountApi {
   async sync() {
     try {
       // For proxy auth, store the username from config if not already in session
-      if (config.auth_mode === "proxy" && config.username && !session.exists()) {
-        console.log(`[AccountApi] Proxy auth: storing session for user ${config.username}`);
-        await session.store(config.username, ""); // Empty token for proxy auth
+      if (config.auth_user && !session.exists()) {
+        console.log(`[AccountApi] Proxy auth: storing session for user ${config.auth_user}`);
+        await session.store(config.auth_user, ""); // Empty token for proxy auth
       }
       if (!session.exists()) {
         return null;

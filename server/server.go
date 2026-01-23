@@ -620,13 +620,9 @@ func (s *Server) handleWebConfig(w http.ResponseWriter, _ *http.Request, v *visi
 }
 
 func (s *Server) configResponse(v *visitor) *apiConfigResponse {
-	authMode := ""
-	username := ""
-	if s.config.AuthUserHeader != "" {
-		authMode = "proxy"
-		if v != nil && v.User() != nil {
-			username = v.User().Name
-		}
+	authUser := ""
+	if s.config.AuthUserHeader != "" && v != nil && v.User() != nil {
+		authUser = v.User().Name
 	}
 	return &apiConfigResponse{
 		BaseURL:            "", // Will translate to window.location.origin
@@ -643,9 +639,8 @@ func (s *Server) configResponse(v *visitor) *apiConfigResponse {
 		WebPushPublicKey:   s.config.WebPushPublicKey,
 		DisallowedTopics:   s.config.DisallowedTopics,
 		ConfigHash:         s.config.Hash(),
-		AuthMode:           authMode,
 		AuthLogoutURL:      s.config.AuthLogoutURL,
-		Username:           username,
+		AuthUser:           authUser,
 	}
 }
 
