@@ -2428,7 +2428,7 @@ func TestServer_AuthUserHeader_UserNotFound(t *testing.T) {
 	require.Equal(t, errHTTPUnauthorized, err)
 }
 
-func TestServer_AuthUserHeader_NoHeader_FallbackToStandardAuth(t *testing.T) {
+func TestServer_AuthUserHeader_NoHeader_ReturnsUnauthorized(t *testing.T) {
 	c := newTestConfigWithAuthFile(t)
 	c.BehindProxy = true
 	c.AuthUserHeader = "X-Forwarded-User"
@@ -2436,28 +2436,27 @@ func TestServer_AuthUserHeader_NoHeader_FallbackToStandardAuth(t *testing.T) {
 
 	require.Nil(t, s.userManager.AddUser("phil", "phil", user.RoleUser, false))
 
-	// No X-Forwarded-User header, but with Authorization header
+	// No X-Forwarded-User header, even with Authorization header -> unauthorized
+	// When auth-user-header is configured, the header MUST be present
 	r, _ := http.NewRequest("GET", "/mytopic/json?poll=1", nil)
 	r.RemoteAddr = "1.2.3.4:1234"
 	r.Header.Set("Authorization", util.BasicAuth("phil", "phil"))
-	v, err := s.maybeAuthenticate(r)
-	require.Nil(t, err)
-	require.NotNil(t, v.User())
-	require.Equal(t, "phil", v.User().Name)
+	_, err := s.maybeAuthenticate(r)
+	require.Equal(t, errHTTPUnauthorized, err)
 }
 
-func TestServer_AuthUserHeader_NoHeader_AnonymousAllowed(t *testing.T) {
+func TestServer_AuthUserHeader_NoHeader_NoAuthReturnsUnauthorized(t *testing.T) {
 	c := newTestConfigWithAuthFile(t)
 	c.BehindProxy = true
 	c.AuthUserHeader = "X-Forwarded-User"
 	s := newTestServer(t, c)
 
-	// No X-Forwarded-User header and no Authorization header -> anonymous
+	// No X-Forwarded-User header and no Authorization header -> unauthorized
+	// When auth-user-header is configured, the header MUST be present
 	r, _ := http.NewRequest("GET", "/mytopic/json?poll=1", nil)
 	r.RemoteAddr = "1.2.3.4:1234"
-	v, err := s.maybeAuthenticate(r)
-	require.Nil(t, err)
-	require.Nil(t, v.User())
+	_, err := s.maybeAuthenticate(r)
+	require.Equal(t, errHTTPUnauthorized, err)
 }
 
 func TestServer_AuthUserHeader_NotBehindProxy(t *testing.T) {

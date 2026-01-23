@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Typography, TextField, Button, Box, IconButton, InputAdornment } from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { NavLink } from "react-router-dom";
@@ -17,6 +17,13 @@ const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  // Redirect to app if using proxy authentication
+  useEffect(() => {
+    if (config.auth_mode === "proxy") {
+      window.location.href = routes.app;
+    }
+  }, []);
 
   const handleSubmit = async (event) => {
     event.preventDefault();

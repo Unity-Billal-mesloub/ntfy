@@ -139,6 +139,17 @@ const ProfileIcon = () => {
   };
 
   const handleLogout = async () => {
+    // For proxy auth, redirect to the logout URL if configured
+    if (config.auth_mode === "proxy") {
+      if (config.auth_logout_url) {
+        await db().delete();
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        window.location.href = config.auth_logout_url;
+      }
+      return;
+    }
+    // Standard logout
     try {
       await accountApi.logout();
       await db().delete();
@@ -146,6 +157,9 @@ const ProfileIcon = () => {
       await session.resetAndRedirect(routes.app);
     }
   };
+
+  // Determine if logout button should be shown
+  const showLogout = config.auth_mode !== "proxy" || config.auth_logout_url;
 
   return (
     <>
@@ -178,12 +192,14 @@ const ProfileIcon = () => {
           </ListItemIcon>
           {t("action_bar_profile_settings")}
         </MenuItem>
-        <MenuItem onClick={handleLogout}>
-          <ListItemIcon>
-            <Logout fontSize="small" />
-          </ListItemIcon>
-          {t("action_bar_profile_logout")}
-        </MenuItem>
+        {showLogout && (
+          <MenuItem onClick={handleLogout}>
+            <ListItemIcon>
+              <Logout fontSize="small" />
+            </ListItemIcon>
+            {t("action_bar_profile_logout")}
+          </MenuItem>
+        )}
       </PopupMenu>
     </>
   );

@@ -139,6 +139,12 @@
 #
 # auth-user-header:
 
+# If auth-user-header is set, this is the URL to redirect users to when they click logout.
+# This is typically the logout URL of your authentication proxy (e.g. Authelia, Authentik).
+# If not set, the logout button will be hidden in the web UI when using proxy auth.
+#
+# auth-logout-url:
+
 # If enabled, clients can attach files to notifications as attachments. Minimum settings to enable attachments
 # are "attachment-cache-dir" and "base-url".
 #

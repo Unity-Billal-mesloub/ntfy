@@ -16,6 +16,7 @@ import {
   withBasicAuth,
   withBearerAuth,
 } from "./utils";
+import config from "./config";
 import session from "./Session";
 import subscriptionManager from "./SubscriptionManager";
 import prefs from "./Prefs";
@@ -341,7 +342,12 @@ class AccountApi {
 
   async sync() {
     try {
-      if (!session.token()) {
+      // For proxy auth, store the username from config if not already in session
+      if (config.auth_mode === "proxy" && config.username && !session.exists()) {
+        console.log(`[AccountApi] Proxy auth: storing session for user ${config.username}`);
+        await session.store(config.username, ""); // Empty token for proxy auth
+      }
+      if (!session.exists()) {
         return null;
       }
       console.log(`[AccountApi] Syncing account`);

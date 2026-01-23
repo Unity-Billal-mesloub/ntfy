@@ -603,13 +603,13 @@ func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request, _ *visitor
 	return s.writeJSON(w, response)
 }
 
-func (s *Server) handleConfig(w http.ResponseWriter, _ *http.Request, _ *visitor) error {
+func (s *Server) handleConfig(w http.ResponseWriter, _ *http.Request, v *visitor) error {
 	w.Header().Set("Cache-Control", "no-cache")
-	return s.writeJSON(w, s.configResponse())
+	return s.writeJSON(w, s.configResponse(v))
 }
 
-func (s *Server) handleWebConfig(w http.ResponseWriter, _ *http.Request, _ *visitor) error {
-	b, err := json.MarshalIndent(s.configResponse(), "", "  ")
+func (s *Server) handleWebConfig(w http.ResponseWriter, _ *http.Request, v *visitor) error {
+	b, err := json.MarshalIndent(s.configResponse(v), "", "  ")
 	if err != nil {
 		return err
 	}
@@ -619,7 +619,15 @@ func (s *Server) handleWebConfig(w http.ResponseWriter, _ *http.Request, _ *visi
 	return err
 }
 
-func (s *Server) configResponse() *apiConfigResponse {
+func (s *Server) configResponse(v *visitor) *apiConfigResponse {
+	authMode := ""
+	username := ""
+	if s.config.AuthUserHeader != "" {
+		authMode = "proxy"
+		if v != nil && v.User() != nil {
+			username = v.User().Name
+		}
+	}
 	return &apiConfigResponse{
 		BaseURL:            "", // Will translate to window.location.origin
 		AppRoot:            s.config.WebRoot,
@@ -635,6 +643,9 @@ func (s *Server) configResponse() *apiConfigResponse {
 		WebPushPublicKey:   s.config.WebPushPublicKey,
 		DisallowedTopics:   s.config.DisallowedTopics,
 		ConfigHash:         s.config.Hash(),
+		AuthMode:           authMode,
+		AuthLogoutURL:      s.config.AuthLogoutURL,
+		Username:           username,
 	}
 }
 
