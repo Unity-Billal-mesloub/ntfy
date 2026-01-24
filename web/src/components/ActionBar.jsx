@@ -16,7 +16,7 @@ import routes from "./routes";
 import db from "../app/db";
 import { topicDisplayName } from "../app/utils";
 import Navigation from "./Navigation";
-import accountApi from "../app/AccountApi";
+import accountApi, { AuthMode } from "../app/AccountApi";
 import PopupMenu from "./PopupMenu";
 import { SubscriptionPopup } from "./SubscriptionPopup";
 import { useIsLaunchedPWA } from "./hooks";
@@ -140,7 +140,7 @@ const ProfileIcon = () => {
 
   const handleLogout = async () => {
     // For proxy auth, redirect to the logout URL if configured
-    if (config.auth_user) {
+    if (config.auth_mode === AuthMode.PROXY) {
       if (config.auth_logout_url) {
         await db().delete();
         localStorage.removeItem("user");
@@ -159,7 +159,7 @@ const ProfileIcon = () => {
   };
 
   // Determine if logout button should be shown (hide if proxy auth without logout URL)
-  const showLogout = !config.auth_user || config.auth_logout_url;
+  const showLogout = config.auth_mode !== AuthMode.PROXY || config.auth_logout_url;
 
   return (
     <>

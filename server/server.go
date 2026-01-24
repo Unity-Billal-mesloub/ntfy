@@ -603,13 +603,13 @@ func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request, _ *visitor
 	return s.writeJSON(w, response)
 }
 
-func (s *Server) handleConfig(w http.ResponseWriter, _ *http.Request, v *visitor) error {
+func (s *Server) handleConfig(w http.ResponseWriter, _ *http.Request, _ *visitor) error {
 	w.Header().Set("Cache-Control", "no-cache")
-	return s.writeJSON(w, s.configResponse(v))
+	return s.writeJSON(w, s.configResponse())
 }
 
-func (s *Server) handleWebConfig(w http.ResponseWriter, _ *http.Request, v *visitor) error {
-	b, err := json.MarshalIndent(s.configResponse(v), "", "  ")
+func (s *Server) handleWebConfig(w http.ResponseWriter, _ *http.Request, _ *visitor) error {
+	b, err := json.MarshalIndent(s.configResponse(), "", "  ")
 	if err != nil {
 		return err
 	}
@@ -619,10 +619,10 @@ func (s *Server) handleWebConfig(w http.ResponseWriter, _ *http.Request, v *visi
 	return err
 }
 
-func (s *Server) configResponse(v *visitor) *apiConfigResponse {
-	authUser := ""
-	if s.config.AuthUserHeader != "" && v != nil && v.User() != nil {
-		authUser = v.User().Name
+func (s *Server) configResponse() *apiConfigResponse {
+	authMode := ""
+	if s.config.AuthUserHeader != "" {
+		authMode = "proxy"
 	}
 	return &apiConfigResponse{
 		BaseURL:            "", // Will translate to window.location.origin
@@ -639,8 +639,8 @@ func (s *Server) configResponse(v *visitor) *apiConfigResponse {
 		WebPushPublicKey:   s.config.WebPushPublicKey,
 		DisallowedTopics:   s.config.DisallowedTopics,
 		ConfigHash:         s.config.Hash(),
+		AuthMode:           authMode,
 		AuthLogoutURL:      s.config.AuthLogoutURL,
-		AuthUser:           authUser,
 	}
 }
 

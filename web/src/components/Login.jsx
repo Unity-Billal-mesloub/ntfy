@@ -5,7 +5,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import accountApi from "../app/AccountApi";
+import accountApi, { AuthMode } from "../app/AccountApi";
 import AvatarBox from "./AvatarBox";
 import session from "../app/Session";
 import routes from "./routes";
@@ -20,7 +20,7 @@ const Login = () => {
 
   // Redirect to app if using proxy authentication
   useEffect(() => {
-    if (config.auth_user) {
+    if (config.auth_mode === AuthMode.PROXY) {
       window.location.href = routes.app;
     }
   }, []);

@@ -342,7 +342,7 @@ if (!import.meta.env.DEV) {
   // since we don't have access to `window` like in `src/app/config.js`
   self.importScripts("/config.js");
 
-  // this is the fallback single-page-app route, matching vite.config.js PWA config,
+  // This is the fallback single-page-app route, matching vite.config.js PWA config,
   // and is served by the go web server. It is needed for the single-page-app to work.
   // https://developer.chrome.com/docs/workbox/modules/workbox-routing/#how-to-register-a-navigation-route
   registerRoute(
@@ -354,10 +354,46 @@ if (!import.meta.env.DEV) {
     })
   );
 
-  // the manifest excludes config.js (see vite.config.js) since the dist-file differs from the
-  // actual config served by the go server. this adds it back with `NetworkFirst`, so that the
-  // most recent config from the go server is cached, but the app still works if the network
-  // is unavailable. this is important since there's no "refresh" button in the installed pwa
-  // to force a reload.
-  registerRoute(({ url }) => url.pathname === "/config.js", new NetworkFirst());
+  // The manifest excludes config.js (see vite.config.js) since the dist-file differs from the
+  // actual config served by the go server. This adds it back with a custom handler that validates
+  // the response. If the response is HTML (e.g., from an auth proxy like Authelia), the service
+  // worker unregisters itself and clears caches to allow the auth proxy to handle the request.
+  registerRoute(
+    ({ url }) => url.pathname === "/config.js",
+    async ({ request }) => {
+      const cache = await caches.open("config-cache");
+      try {
+        const response = await fetch(request);
+        const contentType = response.headers.get("content-type") || "";
+
+        // If we got HTML instead of JavaScript, we're likely logged out at the proxy level
+        // (e.g., Authelia is serving its login page). Clear caches, unregister the service
+        // worker, and reload all clients so the browser can handle the auth flow properly.
+        if (contentType.includes("text/html")) {
+          console.log("[ServiceWorker] Config returned HTML - proxy session likely expired, unregistering");
+          const cacheNames = await caches.keys();
+          await Promise.all(cacheNames.map((name) => caches.delete(name)));
+          await self.registration.unregister();
+
+          // Reload all open clients so they go through the auth proxy
+          const allClients = await self.clients.matchAll({ type: "window" });
+          allClients.forEach((client) => client.navigate(client.url));
+
+          return response;
+        }
+
+        // Valid config response - cache it and return
+        await cache.put(request, response.clone());
+        return response;
+      } catch (e) {
+        // Network failed, try to serve from cache
+        console.log("[ServiceWorker] Network failed for config.js, trying cache", e);
+        const cached = await cache.match(request);
+        if (cached) {
+          return cached;
+        }
+        throw e;
+      }
+    }
+  );
 }

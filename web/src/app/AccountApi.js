@@ -342,10 +342,16 @@ class AccountApi {
 
   async sync() {
     try {
-      // For proxy auth, store the username from config if not already in session
-      if (config.auth_user && !session.exists()) {
-        console.log(`[AccountApi] Proxy auth: storing session for user ${config.auth_user}`);
-        await session.store(config.auth_user, ""); // Empty token for proxy auth
+      // For proxy auth, detect user from /v1/account if no session exists
+      if (config.auth_mode === AuthMode.PROXY && !session.exists()) {
+        console.log(`[AccountApi] Proxy auth mode, detecting user from /v1/account`);
+        const account = await this.get();
+        // Never store "*" (anonymous) as username
+        if (account.username && account.username !== "*") {
+          console.log(`[AccountApi] Proxy auth: storing session for ${account.username}`);
+          await session.store(account.username, ""); // Empty token for proxy auth
+        }
+        return account;
       }
       if (!session.exists()) {
         return null;
@@ -373,6 +379,11 @@ class AccountApi {
     } catch (e) {
       console.log(`[AccountApi] Error fetching account`, e);
       if (e instanceof UnauthorizedError) {
+        // For proxy auth, hard refresh to get fresh auth from proxy
+        if (config.auth_mode === AuthMode.PROXY) {
+          window.location.reload();
+          return undefined;
+        }
         await session.resetAndRedirect(routes.login);
       }
       return undefined;
@@ -435,6 +446,11 @@ export const Permission = {
   READ_ONLY: "read-only",
   WRITE_ONLY: "write-only",
   DENY_ALL: "deny-all",
+};
+
+// Maps to apiConfigResponse.AuthMode in server/types.go
+export const AuthMode = {
+  PROXY: "proxy",
 };
 
 const accountApi = new AccountApi();
