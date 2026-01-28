@@ -7,12 +7,12 @@ and the [ntfy Android app](https://github.com/binwiederhier/ntfy-android/release
 | Component        | Version | Release date |
 |------------------|---------|--------------|
 | ntfy server      | v2.16.0 | Jan 19, 2026 |
-| ntfy Android app | v1.22.1 | Jan 20, 2026 |
+| ntfy Android app | v1.22.2 | Jan 25, 2026 |
 | ntfy iOS app     | v1.3    | Nov 26, 2023 |
 
 Please check out the release notes for [upcoming releases](#not-released-yet) below.
 
-### ntfy Android app v1.22.1
+### ntfy Android app v1.22.2
 Released January 20, 2026
 
 This release adds support for [updating and deleting notifications](publish.md#updating--deleting-notifications) (requires server v2.16.0),

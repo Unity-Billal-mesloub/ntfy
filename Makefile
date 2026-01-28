@@ -245,6 +245,7 @@ cli-deps-gcc-windows:
 
 cli-deps-update:
 	go get -u
+	go mod tidy
 	go install honnef.co/go/tools/cmd/staticcheck@latest
 	go install golang.org/x/lint/golint@latest
 	go install github.com/goreleaser/goreleaser/v2@latest

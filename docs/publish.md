@@ -1619,7 +1619,7 @@ And the same example using [JSON publishing](#publish-as-json):
         method: 'POST',
         body: JSON.stringify({
             topic: "myhome",
-            message": "Somebody retweeted your tweet.",
+            message: "Somebody retweeted your tweet.",
             actions: [
                 {
                     action: "view",
@@ -1879,7 +1879,7 @@ And the same example using [JSON publishing](#publish-as-json):
         method: 'POST',
         body: JSON.stringify({
             topic: "wifey",
-            message": "Your wife requested you send a picture of yourself.",
+            message: "Your wife requested you send a picture of yourself.",
             actions: [
                 {
                     "action": "broadcast",
@@ -2154,7 +2154,7 @@ And the same example using [JSON publishing](#publish-as-json):
         method: 'POST',
         body: JSON.stringify({
             topic: "myhome",
-            message": "Garage door has been open for 15 minutes. Close it?",
+            message: "Garage door has been open for 15 minutes. Close it?",
             actions: [
               {
                 "action": "http",
@@ -3502,6 +3502,9 @@ Here's an example with a custom message, tags and a priority:
 
 ## Updating + deleting notifications
 _Supported on:_ :material-android: :material-firefox:
+
+!!! info
+    This feature is not fully released yet. The ntfy Android 1.22.x is being released right now. This may take a week or so.
 
 You can **update, clear (mark as read and dismiss), or delete notifications** that have already been delivered. This is useful for scenarios
 like download progress updates, replacing outdated information, or dismissing notifications that are no longer relevant.
