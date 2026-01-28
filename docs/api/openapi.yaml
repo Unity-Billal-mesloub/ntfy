@@ -1,27 +1,32 @@
 openapi: 3.1.0
 info:
   title: ntfy API
-  description: 'ntfy is a simple HTTP-based pub-sub notification service. It allows
+  description: 'This is the **OpenAPI (Swagger) documentation** for the ntfy API.
+    **For lots of examples, screenshots, and detailed usage guides, please visit the
+    [main ntfy documentation](https://docs.ntfy.sh/).**
+
+
+    ntfy is a simple HTTP-based pub-sub notification service. It allows
     you to send push notifications to your phone or desktop via scripts from any computer.
 
 
     ## Features
 
-    - **Publish messages**: Send messages to topics via PUT/POST
+    - **[Publish messages](https://docs.ntfy.sh/publish/)**: Send messages to topics via PUT/POST
 
-    - **Subscribe to topics**: Receive messages via JSON stream, SSE, raw stream,
+    - **[Subscribe to topics](https://docs.ntfy.sh/subscribe/api/)**: Receive messages via JSON stream, SSE, raw stream,
     or WebSocket
 
     - **User management**: Authentication, tiered access, and account management
 
-    - **Attachments**: Upload and attach files to messages
+    - **[Attachments](https://docs.ntfy.sh/publish/#attachments)**: Upload and attach files to messages
 
-    - **Email & Phone**: Forward notifications to email or via phone calls
+    - **[Email](https://docs.ntfy.sh/publish/#e-mail-notifications) & [Phone](https://docs.ntfy.sh/publish/#phone-calls)**: Forward notifications to email or via phone calls
 
-    - **UnifiedPush**: Support for UnifiedPush protocol
+    - **[UnifiedPush](https://docs.ntfy.sh/publish/#unifiedpush)**: Support for UnifiedPush protocol
 
 
-    ## Authentication
+    ## [Authentication](https://docs.ntfy.sh/publish/#authentication)
 
     Some endpoints require authentication if access control is enabled. Use either:
 
@@ -30,7 +35,7 @@ info:
     - Bearer Token: `Authorization: Bearer <token>`
 
 
-    ## Rate Limiting
+    ## [Rate Limiting](https://docs.ntfy.sh/#limitations)
 
     Requests may be rate-limited based on IP address or user tier.
 
@@ -1524,7 +1529,7 @@ components:
     XTitle:
       name: X-Title
       in: header
-      description: Message title
+      description: 'Message title. See [ntfy docs](https://docs.ntfy.sh/publish/#message-title) for details.'
       schema:
         type: string
         simple:
@@ -1534,7 +1539,7 @@ components:
     XPriority:
       name: X-Priority
       in: header
-      description: 'Message priority level:
+      description: 'Message priority level. See [ntfy docs](https://docs.ntfy.sh/publish/#message-priority) for details.
 
         - 1 (min): Low priority, may be hidden
 
@@ -1562,40 +1567,42 @@ components:
     XTags:
       name: X-Tags
       in: header
-      description: Comma-separated list of tags (may map to emojis)
+      description: 'Comma-separated list of tags (may map to emojis). See [ntfy docs](https://docs.ntfy.sh/publish/#tags-emojis) for details.'
       schema:
         type: string
     XClick:
       name: X-Click
       in: header
-      description: URL to open when notification is clicked
+      description: 'URL to open when notification is clicked. See [ntfy docs](https://docs.ntfy.sh/publish/#click-action) for details.'
       schema:
         type: string
         format: uri
     XIcon:
       name: X-Icon
       in: header
-      description: URL to an image to use as notification icon
+      description: 'URL to an image to use as notification icon. See [ntfy docs](https://docs.ntfy.sh/publish/#icons) for details.'
       schema:
         type: string
         format: uri
     XAttach:
       name: X-Attach
       in: header
-      description: URL of a file to attach to the notification
+      description: 'URL of a file to attach to the notification. See [ntfy docs](https://docs.ntfy.sh/publish/#attachments) for details.'
       schema:
         type: string
         format: uri
     XFilename:
       name: X-Filename
       in: header
-      description: Filename for the attachment
+      description: 'Filename for the attachment. See [ntfy docs](https://docs.ntfy.sh/publish/#attachments) for details.'
       schema:
         type: string
     XActions:
       name: X-Actions
       in: header
-      description: 'Action buttons for the notification. Format: action,label,url[,clear=true]
+      description: 'Action buttons for the notification. See [ntfy docs](https://docs.ntfy.sh/publish/#action-buttons) for details.
+      
+        Format: action,label,url[,clear=true]
 
 
         Actions:
@@ -1615,14 +1622,14 @@ components:
     XEmail:
       name: X-Email
       in: header
-      description: Forward notification to email address
+      description: 'Forward notification to email address. See [ntfy docs](https://docs.ntfy.sh/publish/#e-mail-notifications) for details.'
       schema:
         type: string
         format: email
     XCall:
       name: X-Call
       in: header
-      description: 'Make phone call when notification is received.
+      description: 'Make phone call when notification is received. See [ntfy docs](https://docs.ntfy.sh/publish/#phone-calls) for details.
 
 
         Set to "1" or "yes" to call verified phone number, or specify phone number
@@ -1634,7 +1641,9 @@ components:
     XDelay:
       name: X-Delay
       in: header
-      description: 'Delay delivery of message. Supports:
+      description: 'Delay delivery of message. See [ntfy docs](https://docs.ntfy.sh/publish/#scheduled-delivery) for details.
+
+        Supports:
 
         - Absolute timestamp: 2023-12-25 08:00:00 EST
 
@@ -1648,7 +1657,7 @@ components:
     XCache:
       name: X-Cache
       in: header
-      description: 'Cache message for delayed subscribers (default: yes)'
+      description: 'Cache message for delayed subscribers (default: yes). See [ntfy docs](https://docs.ntfy.sh/publish/#message-caching) for details.'
       schema:
         type: string
         enum:
@@ -1659,7 +1668,7 @@ components:
     XFirebase:
       name: X-Firebase
       in: header
-      description: 'Forward to Firebase Cloud Messaging (default: yes)'
+      description: 'Forward to Firebase Cloud Messaging (default: yes). See [ntfy docs](https://docs.ntfy.sh/publish/#disable-firebase) for details.'
       schema:
         type: string
         enum:
@@ -1670,7 +1679,7 @@ components:
     XMarkdown:
       name: X-Markdown
       in: header
-      description: Render message as Markdown
+      description: 'Render message as Markdown. See [ntfy docs](https://docs.ntfy.sh/publish/#markdown-formatting) for details.'
       schema:
         type: string
         enum:
@@ -1682,7 +1691,7 @@ components:
       name: X-Template
       in: header
       description: 'Template name from server templates directory, or "yes"/"true"
-        for inline templating.
+        for inline templating. See [ntfy docs](https://docs.ntfy.sh/publish/#message-templating) for details.
 
         When "yes", the message/title should be a Go template.
 
@@ -1693,7 +1702,7 @@ components:
       name: X-Poll-Id
       in: header
       description: 'Poll request ID. When set, this becomes a poll request message
-        for UnifiedPush.
+        for UnifiedPush. See [ntfy docs](https://docs.ntfy.sh/publish/#unifiedpush) for details.
 
         The message body is ignored when this is set.
 
@@ -1703,7 +1712,7 @@ components:
     XUnifiedPush:
       name: X-UnifiedPush
       in: header
-      description: Enable UnifiedPush mode
+      description: 'Enable UnifiedPush mode. See [ntfy docs](https://docs.ntfy.sh/publish/#unifiedpush) for details.'
       schema:
         type: string
         enum:
@@ -1715,14 +1724,14 @@ components:
     Poll:
       name: poll
       in: query
-      description: Return cached messages and close connection
+      description: 'Return cached messages and close connection. See [ntfy docs](https://docs.ntfy.sh/subscribe/api/#poll-for-messages) for details.'
       schema:
         type: boolean
         default: false
     Since:
       name: since
       in: query
-      description: 'Return cached messages since:
+      description: 'Return cached messages since. See [ntfy docs](https://docs.ntfy.sh/subscribe/api/#fetch-cached-messages) for details.
 
         - Unix timestamp: 1635528757
 
@@ -1747,38 +1756,38 @@ components:
     Scheduled:
       name: scheduled
       in: query
-      description: Include scheduled/delayed messages in response
+      description: 'Include scheduled/delayed messages in response. See [ntfy docs](https://docs.ntfy.sh/subscribe/api/#fetch-scheduled-messages) for details.'
       schema:
         type: boolean
         default: false
     FilterId:
       name: id
       in: query
-      description: Only return messages matching this exact message ID
+      description: 'Only return messages matching this exact message ID. See [ntfy docs](https://docs.ntfy.sh/subscribe/api/#filter-messages) for details.'
       schema:
         type: string
     FilterMessage:
       name: message
       in: query
-      description: Only return messages matching this exact message string
+      description: 'Only return messages matching this exact message string. See [ntfy docs](https://docs.ntfy.sh/subscribe/api/#filter-messages) for details.'
       schema:
         type: string
     FilterTitle:
       name: title
       in: query
-      description: Only return messages matching this exact title string
+      description: 'Only return messages matching this exact title string. See [ntfy docs](https://docs.ntfy.sh/subscribe/api/#filter-messages) for details.'
       schema:
         type: string
     FilterPriority:
       name: priority
       in: query
-      description: Only return messages matching any of these priorities (comma-separated)
+      description: 'Only return messages matching any of these priorities (comma-separated). See [ntfy docs](https://docs.ntfy.sh/subscribe/api/#filter-messages) for details.'
       schema:
         type: string
     FilterTags:
       name: tags
       in: query
-      description: Only return messages containing all these tags (comma-separated)
+      description: 'Only return messages containing all these tags (comma-separated). See [ntfy docs](https://docs.ntfy.sh/subscribe/api/#filter-messages) for details.'
       schema:
         type: string
   responses:
