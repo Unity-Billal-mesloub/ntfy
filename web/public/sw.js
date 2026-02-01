@@ -1,7 +1,9 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from "workbox-precaching";
-import { NavigationRoute, registerRoute } from "workbox-routing";
-import { NetworkFirst } from "workbox-strategies";
+import { cleanupOutdatedCaches, precacheAndRoute } from "workbox-precaching";
+import { registerRoute } from "workbox-routing";
+import { NetworkFirst, StaleWhileRevalidate } from "workbox-strategies";
+import { CacheableResponsePlugin } from "workbox-cacheable-response";
+import { ExpirationPlugin } from "workbox-expiration";
 import { clientsClaim } from "workbox-core";
 import { dbAsync } from "../src/app/db";
 import { badge, icon, messageWithSequenceId, notificationTag, toNotificationParams } from "../src/app/notificationUtils";
@@ -337,63 +339,42 @@ clientsClaim();
 cleanupOutdatedCaches();
 
 if (!import.meta.env.DEV) {
-  // we need the app_root setting, so we import the config.js file from the go server
-  // this does NOT include the same base_url as the web app running in a window,
-  // since we don't have access to `window` like in `src/app/config.js`
-  self.importScripts("/config.js");
-
-  // This is the fallback single-page-app route, matching vite.config.js PWA config,
-  // and is served by the go web server. It is needed for the single-page-app to work.
-  // https://developer.chrome.com/docs/workbox/modules/workbox-routing/#how-to-register-a-navigation-route
+  // Use NetworkFirst for navigation requests. This ensures that auth proxies (like Authelia)
+  // can intercept unauthenticated requests, while still providing offline fallback.
+  // The 3-second timeout means if the network is slow/unavailable, cached HTML is served.
   registerRoute(
-    new NavigationRoute(createHandlerBoundToURL("/app.html"), {
-      allowlist: [
-        // the app root itself, could be /, or not
-        new RegExp(`^${config.app_root}$`),
+    ({ request }) => request.mode === "navigate",
+    new NetworkFirst({
+      cacheName: "html-cache",
+      networkTimeoutSeconds: 3,
+      plugins: [new CacheableResponsePlugin({ statuses: [200] }), new ExpirationPlugin({ maxEntries: 10, maxAgeSeconds: 60 })],
+    })
+  );
+
+  // Cache static assets (JS, CSS, images, fonts) with StaleWhileRevalidate for better performance.
+  // Serves cached version immediately while fetching fresh version in the background.
+  registerRoute(
+    ({ request }) =>
+      request.destination === "script" ||
+      request.destination === "style" ||
+      request.destination === "image" ||
+      request.destination === "font",
+    new StaleWhileRevalidate({
+      cacheName: "assets-cache",
+      plugins: [
+        new CacheableResponsePlugin({ statuses: [200] }),
+        new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 }),
       ],
     })
   );
 
-  // The manifest excludes config.js (see vite.config.js) since the dist-file differs from the
-  // actual config served by the go server. This adds it back with a custom handler that validates
-  // the response. If the response is HTML (e.g., from an auth proxy like Authelia), the service
-  // worker unregisters itself and clears caches to allow the auth proxy to handle the request.
+  // Handle config.js with NetworkFirst. The manifest excludes it (see vite.config.js) since
+  // the dist-file differs from the actual config served by the go server.
   registerRoute(
     ({ url }) => url.pathname === "/config.js",
-    async ({ request }) => {
-      const cache = await caches.open("config-cache");
-      try {
-        const response = await fetch(request);
-        const contentType = response.headers.get("content-type") || "";
-
-        // If we got HTML instead of JavaScript, we're likely logged out at the proxy level
-        // (e.g., Authelia is serving its login page). Clear caches, unregister the service
-        // worker, and reload all clients so the browser can handle the auth flow properly.
-        if (contentType.includes("text/html")) {
-          console.log("[ServiceWorker] Config returned HTML - proxy session likely expired, unregistering");
-          const cacheNames = await caches.keys();
-          await Promise.all(cacheNames.map((name) => caches.delete(name)));
-          await self.registration.unregister();
-
-          // Reload all open clients so they go through the auth proxy
-          const allClients = await self.clients.matchAll({ type: "window" });
-          allClients.forEach((client) => client.navigate(client.url));
-
-          return response;
-        }
-
-        // Valid config response - cache it and return
-        await cache.put(request, response.clone());
-        return response;
-      } catch (e) {
-        // Network failed, try to serve from cache
-        console.log("[ServiceWorker] Network failed for config.js, trying cache", e);
-        const cached = await cache.match(request);
-        if (cached) {
-          return cached;
-        }
-        throw e;
-      }
-    }
+    new NetworkFirst({
+      cacheName: "config-cache",
+      plugins: [new CacheableResponsePlugin({ statuses: [200] })],
+    })
   );
 }

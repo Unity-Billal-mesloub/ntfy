@@ -673,6 +673,11 @@ func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request, _ *visito
 // handleStatic returns all static resources (excluding the docs), including the web app
 func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request, _ *visitor) error {
 	r.URL.Path = webSiteDir + r.URL.Path
+	// Prevent caching of HTML files to ensure auth proxies can intercept unauthenticated requests.
+	// Static hashed assets (JS, CSS, images) can still be cached normally.
+	if strings.HasSuffix(r.URL.Path, ".html") {
+		w.Header().Set("Cache-Control", "no-store")
+	}
 	util.Gzip(http.FileServer(http.FS(webFsCached))).ServeHTTP(w, r)
 	return nil
 }
